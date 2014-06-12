@@ -1,0 +1,129 @@
+body {
+  margin:0;
+  font-family: "open_sans";
+}
+
+pre, code {
+  font-family: "bitstream_vera_sans_monoroman";
+}
+
+section#builder {
+  
+}
+
+div#path {
+  background: hsl(202,68%,44%);
+  padding: 16px;
+  font-size: 18px;
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: row;
+  -webkit-flex-direction: row;
+  flex-wrap: nowrap;
+  -webkit-flex-wrap: nowrap;
+  justify-content: center;
+  -webkit-justify-content: center;
+  align-items: baseline;
+  -webkit-align-items: stretch;
+}
+
+div#path > div {
+  padding: 10px;
+  flex-grow: 0;
+  -webkit-flex-grow: 0;
+  background: hsl(205,38%,94%);
+  color: hsl(202,68%,44%);
+  margin-left: 1px;
+  line-height: 24px;
+  overflow: hidden;
+  text-overflow: ellipsis ellipsis;
+}
+
+div#path > div:first-child {
+  margin-left: 0px;
+}
+
+div#path > div.param {
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+  font-family: "bitstream_vera_sans_monoroman";
+  background: hsl(205,38%,100%);
+  color: hsl(202,50%,70%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis "";
+}
+
+div#path > div.param:focus {
+  outline: none;
+  color: hsl(202,68%,44%);
+}
+
+div#path > div#method {
+  background: hsl(201,60%,60%);
+  color: hsl(201,60%,97%);
+  font-weight: 100;
+  min-width: 60px;
+}
+
+div#path > div#submit {
+  background: hsl(201,60%,60%);
+  color: hsl(201,60%,70%);
+  cursor: pointer;
+  min-width: 32px;
+  text-align: center;
+}
+
+div#path > div#submit:hover {
+  color: hsl(201,60%,97%);
+}
+
+div#path > div#submit:active {
+  background: hsl(201,60%,100%);
+  color: hsl(201,60%,70%);
+}
+
+div#params {
+  background: hsl(205,38%,94%);
+  min-height: 45px;
+}
+
+div#path > div#search {
+  text-align: right;
+  cursor: pointer;
+  background: hsl(205,38%,100%);
+}
+
+div#search::before {
+  display: inline-block;
+  vertical-align: -2px;
+  font-family: Genericons;
+  content: '\f400';
+  background: hsl(201,60%,60%);
+  color: #FFF;
+  border-radius: 100%;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  font-size: 16px;
+  text-align: center;
+  opacity: 0.75;
+  overflow: hidden;
+}
+
+/*div#path.endpoint > div#search::before {
+  content: '\f406';
+  font-size: 10px;
+}
+*/
+div.param + div#search {
+  margin-left: 0;
+}
+
+div#search:hover::before {
+  opacity: 1.0;
+}
+
+div#lookup {
+  
+}

@@ -1,0 +1,17 @@
+{
+  "name": "console2",
+  "version": "0.0.0",
+  "description": "A better REST console.",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies" : {
+    "mocha" : "*"
+  },
+  "dependencies" : {
+    "liquidmetal" : "rmm5t/liquidmetal"
+  }
+}
