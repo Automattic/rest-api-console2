@@ -105,6 +105,11 @@ div#parts > div.param {
   text-overflow: ellipsis "";
 }
 
+div#parts > div.segment:nth-last-child(3):first-child {
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+}
+
 div#parts > div.param:focus {
   outline: none;
   color: hsl(202,68%,44%);
