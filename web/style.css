@@ -28,6 +28,13 @@ div#path {
 }
 
 div#path > div {
+  flex-grow: 0;
+  -webkit-flex-grow: 0;
+  padding: 10px;
+  margin-left: 1px;
+}
+
+div#parts > div {
   padding: 10px;
   flex-grow: 0;
   -webkit-flex-grow: 0;
@@ -41,22 +48,6 @@ div#path > div {
 
 div#path > div:first-child {
   margin-left: 0px;
-}
-
-div#path > div.param {
-  flex-grow: 1;
-  -webkit-flex-grow: 1;
-  font-family: "bitstream_vera_sans_monoroman";
-  background: hsl(205,38%,100%);
-  color: hsl(202,50%,70%);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis "";
-}
-
-div#path > div.param:focus {
-  outline: none;
-  color: hsl(202,68%,44%);
 }
 
 div#path > div#method {
@@ -83,16 +74,48 @@ div#path > div#submit:active {
   color: hsl(201,60%,70%);
 }
 
-div#params {
-  background: hsl(205,38%,94%);
-  min-height: 45px;
+div#path > div#parts {
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+  background: none;  
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: row;
+  -webkit-flex-direction: row;
+  flex-wrap: nowrap;
+  -webkit-flex-wrap: nowrap;
+  justify-content: center;
+  -webkit-justify-content: center;
+  align-items: baseline;
+  -webkit-align-items: stretch;
+  padding: 0;
+  margin-left: 0;
+  position: relative;
+  overflow: visible;
 }
 
-div#path > div#search {
+div#parts > div.param {
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+  font-family: "bitstream_vera_sans_monoroman";
+  background: hsl(205,38%,100%);
+  color: hsl(202,50%,70%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis "";
+}
+
+div#parts > div.param:focus {
+  outline: none;
+  color: hsl(202,68%,44%);
+}
+
+div#parts > div#search {
   text-align: right;
   cursor: pointer;
   background: hsl(205,38%,100%);
 }
+
 
 div#search::before {
   display: inline-block;
@@ -124,6 +147,73 @@ div#search:hover::before {
   opacity: 1.0;
 }
 
-div#lookup {
-  
+div#parts > div#lookup {
+  position: absolute;
+  padding: 0;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 1;
+  background: none;
+  overflow: visible;
+}
+
+div#lookup > ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: hsl(210,33%,99%);
+  position: relative;
+  top: 1px;
+}
+
+div#lookup li {
+  margin: 0;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid hsl(205,38%,94%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+div#lookup li:last-child {
+  border-bottom: 0;
+}
+
+div#lookup li > code {
+  color: hsl(202,68%,44%);
+}
+
+div#lookup li > span {
+  display: inline-block;
+  margin-right: 5px;
+  font-family: "bitstream_vera_sans_monoroman";
+  color: hsl(202,68%,80%);
+  width: 45px;
+}
+
+div#lookup li > p {
+  margin: 0;
+  padding: 0;
+  color: hsl(202,10%,40%);
+  font-weight: 100;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+div#lookup li strong {
+  font-weight: 100;
+  text-transform: capitalize;
+}
+
+div#lookup li strong:after {
+  content: ':';
+}
+
+div#params {
+  background: hsl(205,38%,94%);
+  min-height: 45px;
 }

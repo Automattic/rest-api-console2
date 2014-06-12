@@ -270,82 +270,52 @@ $(function() {
   $.getJSON("help.json", log(function(response) {
 
     var endpoints = response.body,
-        endpoint = null,
-        pathField = new PathField($('#path'), {'default_path':new path.DefaultPath()}),
-        lookupPane = new LookupPane($("#lookup"), {
-          template: function(item) {
-            var listItem = $("<li></li>");
-            listItem.append($("<span></span>").text([item.group, item.path_labeled].join(' ')));
+        pathField = new PathField($('#path'), {
+          'default_path':new path.DefaultPath(),
+          'itemTemplate': function(item) {
+            var listItem = $("<li></li>"),
+                method = $("<span></span>").text(item.method).appendTo(listItem),
+                path = $("<code></code>").text(item.path_labeled).appendTo(listItem),
+                description = $("<p></p>").appendTo(listItem),
+                group = $("<strong></strong>").text(item.group).appendTo(description);
+      
+            description.append(" " + item.description);
+      
             return listItem;
-          }
-        }),
-        search = fn.rateLimit(200, function(q){
+          },
+          'onSelect': function(endpoint) {
+            console.log("Selecting", endpoint);
+            var endpointPath = new path.Path(endpoint.path_labeled, endpoint.request.path);
+            pathField.setValue(endpointPath);
+          },
+          'onSearch': function(q){
+              var ranked = endpoints.map(function(endpoint) {
+                var i = endpoint.description.indexOf(" ", 16),
+                    source = [endpoint.group, endpoint.path_labeled, endpoint.description.substring(0,i)].join(' '),
+                    score = liquidemetal.score(source, q);
 
-          var ranked = endpoints.map(function(endpoint) {
-            var i = endpoint.description.indexOf(" ", 16),
-                source = [endpoint.group, endpoint.path_labeled, endpoint.description.substring(0,i)].join(' '),
-                score = liquidemetal.score(source, q);
+                return [score, source, endpoint];
+              }).filter(function(score){
+                return score[0] > 0;
+              }).sort(function(a, b) {
+                if (a[0] == b[0]) return 0;
 
-            return [score, source, endpoint];
-          }).filter(function(score){
-            return score[0] > 0;
-          }).sort(function(a, b) {
-            if (a[0] == b[0]) return 0;
+                if (a[0] > b[0]) return -1;
 
-            if (a[0] > b[0]) return -1;
+                return 1;
 
-            return 1;
+              });
 
-          });
+              return ranked.map(function(e) {
+                return e[2];
+              });
 
-          results = ranked.map(function(e) {
-            return e[2];
-          });
-
-          lookupPane.displayResults(results);
-
-        }),
-        cancelSearch = function(){};
+            } // onSearch function
+          } // PathField options
+        ); // PathField constructor
 
     pathField.on('submit', function(){
       // console.log.apply(console, arguments);
-    });
-
-    pathField.on('clear', function() {
-      endpoint = null;
-    });
-
-    lookupPane.on('select', function(item) {
-      var endpointPath = new path.Path(item.path_labeled, item.request.path);
-
-      endpoint = item;
-      pathField.setValue(endpointPath);
-
-    });
-
-    var lastv = "";
-    pathField.on('change', function(v) {
-      v = decodeURI(v);
-
-      // we currently have an endpoint
-      if (endpoint !== null) {
-        return;
-      }
-
-      if (v === "") {
-        if (cancelSearch) cancelSearch();
-        lookupPane.hide();
-        return;
-      }
-
-      if (v === lastv) {
-        return;
-      }
-
-      lastv = v;
-
-      cancelSearch = search(v);
-
     });
 
   }));
@@ -384,9 +354,13 @@ LookupPane.prototype.displayResults = function(results) {
   this.clearResults();
 
   this.results = results.slice(0,this.options.max);
+
+  var items = $([]);
   this.results.forEach(function(item) {
-    listNode.append(template(item));
+    items = items.add(template(item));
   });
+
+  listNode.append(items);
 
 };
 
@@ -412,18 +386,50 @@ LookupPane.prototype.onClick = function(e) {
 module.exports = LookupPane;
 },{"events":10,"util":14}],8:[function(require,module,exports){
 var events = require('events'),
-    util = require('util');
+    util = require('util'),
+    LookupPane = require('./lookup_pane'),
+    fn = require('../fn'),
+    noop = function(){};
 
 function PathField(node, options) {
   events.EventEmitter.apply(this);
 
   this.node = node;
-  this.options =  $.extend({ 'decorators' : '#method,#submit,#search', 'submit' : '#submit', 'search':'#search' }, options);
+  this.options =  $.extend({
+    'decorators'  :'#method,#submit,#search,#parts,#lookup',
+    'submit'      :'#submit',
+    'search'      :'#search',
+    'container'   :'#parts',
+    'lookup'      :'#lookup',
+    'onSearch'    :noop,
+    'onSelect'    :noop,
+    'itemTemplate':function(item){
+      return $("<li></li>").text("item");
+    }
+  }, options);
+
   this.values = {};
 
   this.node.on('click', this.options.submit, this.buildPath.bind(this));
   this.node.on('click', this.options.search, this.onSearch.bind(this));
+  this.partsNode = this.node.find(this.options.container);
+
+  this.lookupPane = new LookupPane($("#lookup"), {
+    template: this.options.itemTemplate
+  });
+
+  this.last_query = "";
+  this.cancel_search = noop;
+
   this.reset();
+
+  this.search = fn.rateLimit(200, (function(q){
+    var results = this.options.onSearch(q);
+    this.lookupPane.displayResults(results);
+  }).bind(this));
+
+  this.lookupPane.on('select', this.options.onSelect);
+
 }
 
 util.inherits(PathField, events.EventEmitter);
@@ -451,7 +457,11 @@ PathField.prototype.reset = function() {
 };
 
 PathField.prototype.clearNodes = function() {
-  this.node.children().not(this.options.decorators).remove();
+  this.partsNode.children().not(this.options.decorators).remove();
+};
+
+PathField.prototype.hasSelection = function() {
+  return this.options.default_path !== this.path;
 };
 
 PathField.prototype.buildPath = function() {
@@ -463,7 +473,27 @@ PathField.prototype.buildPath = function() {
 PathField.prototype.setParam = function(name, value) {
   if(this.values[name] != value) {
     this.values[name] = value;
-    this.emit('change', this.path.toString(this.values));
+
+    if (this.hasSelection()) return;
+
+    var query = decodeURI(this.path.toString(this.values));
+
+    if (query === "") {
+      this.last_query = "";
+      this.cancel_search();
+      this.lookupPane.clearResults();
+      return;
+    }
+
+    if (this.last_query === query) {
+      return;
+    }
+
+    this.last_query = query;
+
+    this.cancel_search();
+    this.cancel_search = this.search(query);
+
   }
 };
 
@@ -482,7 +512,7 @@ PathField.prototype.onSearch = function() {
 
 PathField.prototype.focus = function() {
 
-  var ele = this.node.children('.param').get(0);
+  var ele = this.partsNode.children('.param').get(0);
 
   if (ele) {
     var range = document.createRange(),
@@ -493,7 +523,6 @@ PathField.prototype.focus = function() {
     } else {
       range.setStart(ele);
     }
-
 
     selection.removeAllRanges();
     selection.addRange(range);
@@ -508,7 +537,7 @@ function buildNode(part) {
               .text(part.getLabel())
               .addClass(part.getType())
               .attr('contenteditable', part.options.editable)
-              .insertBefore(this.node.children(this.options.search));
+              .insertBefore(this.partsNode.children(this.options.search));
 
   if (part.options.editable) {
     node.text(field.getParam(part.name) || part.getLabel());
@@ -546,7 +575,7 @@ function buildNode(part) {
 
 module.exports = PathField;
 
-},{"events":10,"util":14}],9:[function(require,module,exports){
+},{"../fn":1,"./lookup_pane":7,"events":10,"util":14}],9:[function(require,module,exports){
 /**
  * LiquidMetal, version: 1.2.1 (2012-04-21)
  *
