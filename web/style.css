@@ -177,6 +177,10 @@ div#lookup li {
   text-overflow: ellipsis;
 }
 
+div#lookup li.highlight {
+  background-color: hsl(205,38%,96%);
+}
+
 div#lookup li:last-child {
   border-bottom: 0;
 }
@@ -202,7 +206,6 @@ div#lookup li > p {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 
 div#lookup li strong {
   font-weight: 100;
