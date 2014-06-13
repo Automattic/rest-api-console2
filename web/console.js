@@ -259,81 +259,100 @@ module.exports.PathPart = PathPart;
 var path = require('../path'),
     PathField = require('./path_field'),
     LookupPane = require('./lookup_pane'),
-    log = require('./log'),
-    liquidemetal = require('liquidmetal'),
-    fn = require('../fn');
+    MethodSelector = require('./method_selector'),
+    liquidemetal = require('liquidmetal');
 
 if (!window) throw new Error("Not a browser window.");
 
 $(function() {
 
-  $.getJSON("help.json", log(function(response) {
+  var endpoints = [],
+      methodSelector = new MethodSelector($('#method'), {'container':$('#methods'),'label':$('#method span')}),
+      pathField = new PathField($('#path'), {
+        'default_path':new path.DefaultPath(),
+        'itemTemplate': function(item) {
+          var listItem = $("<li></li>"),
+              method = $("<span></span>").text(item.method).appendTo(listItem),
+              path = $("<code></code>").text(item.path_labeled).appendTo(listItem.append(" ")),
+              group = $("<strong></strong>").text(item.group).appendTo(listItem.append(" ")),
+              description = $("<em></em>").text(item.description).appendTo(listItem.append(" "));
 
-    var endpoints = response.body,
-        pathField = new PathField($('#path'), {
-          'default_path':new path.DefaultPath(),
-          'itemTemplate': function(item) {
-            var listItem = $("<li></li>"),
-                method = $("<span></span>").text(item.method).appendTo(listItem),
-                path = $("<code></code>").text(item.path_labeled).appendTo(listItem),
-                description = $("<p></p>").appendTo(listItem),
-                group = $("<strong></strong>").text(item.group).appendTo(description);
-      
-            description.append(" " + item.description);
-      
-            return listItem;
-          },
-          'onSelect': function(endpoint) {
-            var endpointPath = new path.Path(endpoint.path_labeled, endpoint.request.path);
-            pathField.setValue(endpointPath);
-          },
-          'onSearch': function(q){
-              var ranked = endpoints.map(function(endpoint) {
-                var i = endpoint.description.indexOf(" ", 16),
-                    source = endpoint.search_source || [endpoint.path_labeled.replace(/\//g, ' '), endpoint.group, endpoint.description.substring(0,i)].join(' '),
-                    score = liquidemetal.score(source, q);
+          return listItem;
+        },
+        'onSelect': function(endpoint) {
+          var endpointPath = new path.Path(endpoint.path_labeled, endpoint.request.path);
+          pathField.setValue(endpointPath);
+          methodSelector.setValue(endpoint.method);
+          methodSelector.disable();
+        },
+        'onSearch': function(q){
+            var term = q.replace(/\//g, ' ').toUpperCase().trim(),
+                ranked = endpoints.map(function(endpoint) {
+              var i = endpoint.description.indexOf(" ", 16),
+                  source = endpoint.search_source || [endpoint.path_labeled.replace(/\//g, ' '), endpoint.group, endpoint.description.substring(0,i)].join(' ').toUpperCase().trim(),
+                  score = liquidemetal.score(source, term);
 
-                endpoint.search_source = source;
+              endpoint.search_source = source;
 
-                return [score, source, endpoint];
-              }).filter(function(score){
-                return score[0] > 0;
-              }).sort(function(a, b) {
-                if (a[0] == b[0]) return 0;
+              return [score, source, endpoint];
+            }).filter(function(score){
+              return score[0] > 0;
+            }).sort(function(a, b) {
+              if (a[0] == b[0]) return 0;
 
-                if (a[0] > b[0]) return -1;
+              if (a[0] > b[0]) return -1;
 
-                return 1;
+              return 1;
 
-              });
+            });
 
-              return ranked.map(function(e) {
-                return e[2];
-              });
+            return ranked.map(function(e) {
+              return e[2];
+            });
 
-            } // onSearch function
-          } // PathField options
-        ); // PathField constructor
+          } // onSearch function
+        } // PathField options
+      ); // PathField constructor
 
-    pathField.on('submit', function(path){
-      console.log('submit', path);
-    });
+  methodSelector.on('enabled', function(){
+    methodSelector.node.attr('tabindex','0').addClass('enabled');
+  });
 
-  }));
+  methodSelector.on('disabled', function(){
+    methodSelector.node.attr('tabindex', null).removeClass('enabled');
+  });
+
+  methodSelector.on('change', function() {
+    pathField.focus();
+  });
+
+  pathField.on('submit', function(path){
+    console.log('submit', path);
+  });
+
+  pathField.on('reset', function(){
+    methodSelector.enable();
+  });
+
+  pathField.focus();
+
+  // global hotkeys
+  $(document).on('keydown', function(e) {
+
+    if (e.which == 77 && e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
+      e.preventDefault();
+      methodSelector.toggle();
+      return false;
+    }
+
+  });
+
+  $.getJSON("help.json", function(response) {
+    endpoints = response.body;
+  });
 
 });
-},{"../fn":1,"../path":2,"./log":6,"./lookup_pane":7,"./path_field":8,"liquidmetal":9}],6:[function(require,module,exports){
-module.exports = function(callback) {
-  if (callback) {
-    return function (){
-      console.log.apply(console, arguments);
-      callback.apply(null, arguments);
-    };    
-  }
-  console.log.apply(console, arguments);
-};
-
-},{}],7:[function(require,module,exports){
+},{"../path":2,"./lookup_pane":6,"./method_selector":7,"./path_field":8,"liquidmetal":9}],6:[function(require,module,exports){
 var events = require('events'),
     util = require('util');
 
@@ -347,9 +366,9 @@ function LookupPane(node, options) {
   }, options);
 
   this.listNode = $("<ol></ol>").appendTo(this.node);
-  this.node.on('click', 'li', this.onClick.bind(this));
+  this.node.on('mousedown', 'li', this.onClick.bind(this));
   this.node.on('mouseenter', 'li', this.onHover.bind(this));
-  this.last_index = 0;
+  this.last_index = -1;
 }
 
 util.inherits(LookupPane, events.EventEmitter);
@@ -370,8 +389,14 @@ LookupPane.prototype.displayResults = function(results) {
 
   listNode.append(items);
 
+  this.show();
+
+  if (this.last_index === -1) {
+    return;
+  }
+
   if (this.last_index > items.length - 1) {
-    this.last_index = items.length - 1;
+    this.last_index = 0;
   }
 
   listNode.children().eq(this.last_index).addClass(this.options.highlightClass);
@@ -379,12 +404,21 @@ LookupPane.prototype.displayResults = function(results) {
 };
 
 LookupPane.prototype.hide = function() {
-  this.clearResults();
+  this.node.hide();
+};
+
+LookupPane.prototype.show = function() {
+  this.node.show();
 };
 
 LookupPane.prototype.clearResults = function() {
   this.listNode.children().remove();
   this.results = [];
+};
+
+LookupPane.prototype.reset = function() {
+  this.clearResults();
+  this.last_index = -1;
 };
 
 LookupPane.prototype.onClick = function(e) {
@@ -397,14 +431,11 @@ LookupPane.prototype.onClick = function(e) {
 LookupPane.prototype.selectHighlighted = function() {
 
   var index = this.getHighlighted().index(),
-      result = this.results[index];
+      result = this.results ? this.results[index] : false;
 
   if (!result) return false;
 
   this.emit('select', result);
-  this.clearResults();
-
-  this.last_index = 0;
 
   return true;
 
@@ -459,6 +490,233 @@ LookupPane.prototype.onHover = function(e) {
 };
 
 module.exports = LookupPane;
+},{"events":10,"util":14}],7:[function(require,module,exports){
+var events = require('events'),
+    util = require('util');
+
+function MethodSelector(node, options) {
+  events.EventEmitter.apply(this);
+
+  this.node = node;
+
+  this.options = $.extend({
+    'values'         : ['GET', 'POST'],
+    'container'      : this.node,
+    'label'          : this.node,
+    'highlightClass' : 'highlight',
+    'disabledClass'  : 'disabled'
+  }, options);
+
+  this.enabled = true;
+
+  this.container = this.options.container;
+
+  this.container.hide();
+
+  this.node.on('focus', this.onFocus.bind(this));
+  this.node.on('blur', this.onBlur.bind(this));
+  this.node.on('mouseleave', this.onLeave.bind(this));
+  this.node.on('click', this.onClick.bind(this));
+  this.node.on('mousedown', 'li', this.onClickOption.bind(this));
+
+  this.keyListener = this.onKeypress.bind(this);
+
+  this.setValue(this.options.values[0]);
+
+  this.emit('enabled');
+
+}
+
+util.inherits(MethodSelector, events.EventEmitter);
+
+MethodSelector.prototype.disable = function() {
+  this.enabled = false;
+  this.emit('disabled');
+};
+
+MethodSelector.prototype.enable = function() {
+  this.enabled = true;
+  this.emit('enabled');
+};
+
+MethodSelector.prototype.onFocus = function() {
+  this.focused = true;
+  this.showOptions();
+};
+
+MethodSelector.prototype.onBlur = function() {
+  this.focused = false;
+  this.hideOptions();
+};
+
+MethodSelector.prototype.onLeave = function() {
+  this.node.blur();
+};
+
+MethodSelector.prototype.showOptions = function() {
+
+  if (!this.enabled) return;
+
+  this.refreshItems();
+
+  this.container.show();
+  $(document).on('keydown', this.keyListener);
+
+};
+
+MethodSelector.prototype.hideOptions = function() {
+  this.container.hide();
+  $(document).off('keydown', this.keyListener);
+};
+
+MethodSelector.prototype.onKeypress = function(e) {
+
+  if (e.which == 38) {
+    e.preventDefault();
+    return false;
+  }
+
+  if (e.which == 40) {
+    e.preventDefault();
+    return false;
+  }
+
+  if (e.which == 13) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    this.selectHighlighted();
+    return false;
+  }
+
+  if (e.which == 27) {
+    this.node.blur();
+    e.preventDefault();
+    return false;
+  }
+
+};
+
+MethodSelector.prototype.onClick = function(e) {
+  e.preventDefault();
+  this.showOptions();
+
+  return false;
+
+};
+
+MethodSelector.prototype.onClickOption = function(e) {
+
+  var val = $(e.currentTarget).text();
+
+  this.setValue(val);
+
+  this.hideOptions();
+};
+
+MethodSelector.prototype.setValue = function(v) {
+
+  if (!this.enabled) return;
+
+  var current = this.getValue();
+
+  if (v === current) return;
+
+  this.options.label.text(v);
+  this.refreshItems();
+
+  this.emit('change');
+
+};
+
+MethodSelector.prototype.getValue = function() {
+  return this.options.label.text();
+};
+
+MethodSelector.prototype.refreshItems = function() {
+  this.removeItems();
+  this.addItems();
+  this.highlightNext();
+};
+
+MethodSelector.prototype.addItems = function() {
+
+  var list = $('<ul></ul>'),
+      current = this.getValue();
+
+  this.options.values.forEach(function(v){
+    if(v === current) return;
+
+    list.append($("<li></li>").text(v));
+  });
+
+  list.appendTo(this.container);
+
+};
+
+MethodSelector.prototype.removeItems = function() {
+
+  this.container.find('ul').remove();
+
+};
+
+MethodSelector.prototype.getHighlighted = function() {
+  return this.container.find('li.' + this.options.highlightClass);
+};
+
+MethodSelector.prototype.selectHighlighted = function() {
+  var highlighted = this.getHighlighted();
+
+  if (highlighted.length > 0) {
+    this.setValue(highlighted.text());
+  }
+
+};
+
+MethodSelector.prototype.highlightNext = function() {
+  var highlighted = this.getHighlighted(),
+      next = highlighted.next();
+
+  if (highlighted.length === 0) {
+    next = this.container.find('li').first();
+  }
+
+  highlighted.removeClass(this.options.highlightClass);
+  next.addClass(this.options.highlightClass);
+
+};
+
+MethodSelector.prototype.highlightPrev = function() {
+  var highlighted = this.getHighlighted(),
+      prev = highlighted.prev();
+
+  if (highlighted.length === 0) {
+    prev = this.container.find('li').last();
+  }
+
+  highlighted.removeClass(this.options.highlightClass);
+  prev.addClass(this.options.highlightClass);
+  
+};
+
+MethodSelector.prototype.reset = function() {
+  this.setValue(this.options.values[0]);
+};
+
+MethodSelector.prototype.toggle = function() {
+
+  var current = this.getValue(),
+      i = this.options.values.indexOf(current);
+
+    if (i === this.options.values.length - 1) {
+      i = -1;
+    }
+
+    i++;
+    this.setValue(this.options.values[i]);
+
+};
+
+module.exports = MethodSelector;
 },{"events":10,"util":14}],8:[function(require,module,exports){
 var events = require('events'),
     util = require('util'),
@@ -505,30 +763,50 @@ function PathField(node, options) {
 
   this.lookupPane.on('select', this.options.onSelect);
 
+  $(document).on('keydown', this.onKeydown.bind(this));
+
 }
 
 util.inherits(PathField, events.EventEmitter);
 
 PathField.prototype.setValue = function(path) {
+
+  if (path === this.path) {
+    return;
+  }
+
+  this.changing = true;
+
   this.clearNodes();
 
   this.path = path;
+  this.last_query = "";
 
   if (!path) {
+    this.emit('change');
     return;
   }
 
   this.node.addClass('endpoint');
+  this.focusable_parts = [];
   path.parts.forEach(buildNode.bind(this));
 
   this.focus();
+
+  if (this.hasSelection()) {
+    this.lookupPane.hide();
+  } else {
+    this.lookupPane.show();
+  }
+
+  this.emit('change');
 
 };
 
 PathField.prototype.reset = function() {
   this.setValue(this.options.default_path);
   this.node.removeClass('endpoint');
-  this.emit('clear');
+  this.emit('reset');
 };
 
 PathField.prototype.clearNodes = function() {
@@ -549,27 +827,33 @@ PathField.prototype.setParam = function(name, value) {
   if(this.values[name] != value) {
     this.values[name] = value;
 
-    if (this.hasSelection()) return;
-
-    var query = decodeURI(this.path.toString(this.values));
-
-    if (query === "") {
-      this.last_query = "";
-      this.cancel_search();
-      this.lookupPane.clearResults();
-      return;
-    }
-
-    if (this.last_query === query) {
-      return;
-    }
-
-    this.last_query = query;
-
-    this.cancel_search();
-    this.cancel_search = this.search(query);
+    this.performSearch();
 
   }
+};
+
+PathField.prototype.performSearch = function() {
+
+  if (this.hasSelection()) return;
+
+  var query = decodeURI(this.path.toString(this.values));
+
+  if (query === "") {
+    this.last_query = "";
+    this.cancel_search();
+    this.lookupPane.reset();
+    return;
+  }
+
+  if (this.last_query === query) {
+    return;
+  }
+
+  this.last_query = query;
+
+  this.cancel_search();
+  this.cancel_search = this.search(query);
+
 };
 
 PathField.prototype.getParam = function(name) {
@@ -587,22 +871,81 @@ PathField.prototype.onSearch = function() {
 
 PathField.prototype.focus = function() {
 
-  var ele = this.partsNode.children('.param').get(0);
+  var part = this.focusable_parts[0];
 
-  if (ele) {
-    var range = document.createRange(),
-        selection = window.getSelection();
+  if (part) $(part.node).focus();
 
-    if (ele.firstChild && ele.firstChild.nodeType === document.TEXT_NODE) {
-      range.setStartAfter(ele.firstChild);
-    } else {
-      range.setStart(ele);
-    }
+};
 
-    selection.removeAllRanges();
-    selection.addRange(range);
+PathField.prototype.updateRange = function(part, node) {
+  var range = document.createRange(),
+      selection = window.getSelection(),
+      value = this.getParam(part.name);
+
+  if (value === "") {
+    range.setStart(node, 0);
+  } else {
+    range.setStartAfter(node.firstChild);
   }
 
+  selection.removeAllRanges();
+  selection.addRange(range);
+};
+
+PathField.prototype.onKeydown = function(e) {
+
+  var hasSelection = this.hasSelection();
+
+
+  if (e.which == 13) {
+    e.preventDefault();
+
+    if (!hasSelection && this.lookupPane.selectHighlighted()) {
+      return false;
+    }
+
+    this.buildPath();
+
+    return false;
+  }
+
+  if (e.which == 27) {
+
+    if (hasSelection) {
+      e.preventDefault();
+      this.reset();
+    } else {
+      this.lookupPane.reset();
+      this.lookupPane.hide();
+    }
+
+    return false;
+  }
+
+  if (e.which == 191 && !this.focused) { // "/"
+    e.preventDefault();
+    this.focus();
+    return false;
+  }
+
+};
+
+PathField.prototype.onFocusPart = function(part, node) {
+  clearTimeout(this.blur_timeout);
+  if (!this.hasSelection()) {
+    this.lookupPane.show();
+  }
+
+  this.updateRange(part, node);
+};
+
+PathField.prototype.onBlurPart = function(part, node) {
+  var field = this;
+  this.blur_timeout = setTimeout(function(){
+    if (!field.hasSelection()) {
+      field.lookupPane.hide();
+    }
+  }, 10);
 };
 
 function buildNode(part) {
@@ -615,27 +958,13 @@ function buildNode(part) {
               .insertBefore(this.partsNode.children(this.options.search));
 
   if (part.options.editable) {
+    field.focusable_parts.push({node:node.get(0), part:part});
     node.text(field.getParam(part.name) || part.getLabel());
     node
+      .attr("tabindex", 0)
       .on('keydown', function(e) {
         var hasSelection = field.hasSelection();
-        if (e.which == 13) { // return
-          e.preventDefault();
-
-          console.log("Selection? %b %b", hasSelection);
-
-          if (!hasSelection && field.lookupPane.selectHighlighted()) {
-            return false;
-          }
-
-          field.buildPath(); 
-
-          return false;
-        } else if (e.which == 27) { // esc
-          e.preventDefault();
-          field.reset();
-          return false;
-        } else if (e.which == 38 && !hasSelection) { // up
+        if (e.which == 38 && !hasSelection) { // up
           e.preventDefault();
           field.lookupPane.highlightPrevious();
           return;
@@ -644,7 +973,6 @@ function buildNode(part) {
           field.lookupPane.highlightNext();
           return;
         }
-
       })
       .on('keyup', function() {
         field.setParam(part.name, node.text());
@@ -654,13 +982,16 @@ function buildNode(part) {
         if (value === '') {
           node.text('');
         }
-        
+        field.focused = true;
+        field.onFocusPart(part, node.get(0));
       })
       .on('blur', function() {
         var val = field.getParam(part.name);
         if (!val || val === "") {
           node.text(part.getLabel());
         }
+        field.focused = false;
+        field.onBlurPart(part, node);
       });
   }
 
@@ -668,7 +999,7 @@ function buildNode(part) {
 
 module.exports = PathField;
 
-},{"../fn":1,"./lookup_pane":7,"events":10,"util":14}],9:[function(require,module,exports){
+},{"../fn":1,"./lookup_pane":6,"events":10,"util":14}],9:[function(require,module,exports){
 /**
  * LiquidMetal, version: 1.2.1 (2012-04-21)
  *

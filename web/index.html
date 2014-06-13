@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
 <script type="text/javascript" src="zepto.min.js"></script>
 <script type="text/javascript" src="console.js"></script>
 <link rel="stylesheet" type="text/css" charset="utf-8" href="type.css">
@@ -6,12 +7,15 @@
 <title>WordPress.com Console</title>
 <section id="builder">
     <div id="path">
-        <div id="method">GET</div>
+        <div id="method" class="enabled" tabindex="0">
+            <span></span>
+            <div id="methods"></div>
+        </div>
         <div id="parts">
             <div id="search"></div>
             <div id="lookup"></div>
         </div>
-        <div id="submit">&#x23CE;</div>
+        <div id="submit" tabindex="0">&#x23CE;</div>
     </div>
 </section>
 <section id="requests">

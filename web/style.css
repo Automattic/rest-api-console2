@@ -23,7 +23,7 @@ div#path {
   -webkit-flex-wrap: nowrap;
   justify-content: center;
   -webkit-justify-content: center;
-  align-items: baseline;
+  align-items: middle;
   -webkit-align-items: stretch;
 }
 
@@ -50,23 +50,54 @@ div#path > div:first-child {
   margin-left: 0px;
 }
 
-div#path > div#method {
+div#method {
   background: hsl(201,60%,60%);
   color: hsl(201,60%,97%);
   font-weight: 100;
-  min-width: 60px;
+  min-width: 64px;
+  max-width: 64px;
+  position: relative;
+  cursor: default;
 }
 
-div#path > div#submit {
+div#method.enabled {
+  cursor: pointer;
+}
+
+div#method::after {
+  content: '\25BE';
+  font-family: open_sans;
+  display: inline-block;
+  position: absolute;
+  right: 8px;
+  top: 10px;
+  visibility: hidden;
+}
+
+div#method.enabled::after {
+  visibility: visible;
+}
+
+div#method.enabled:hover, div#method.enabled:active, div#method:focus {
+  outline: none;
+  background: hsl(201,60%,70%);
+}
+
+div#submit {
   background: hsl(201,60%,60%);
-  color: hsl(201,60%,70%);
+  color: hsl(201,60%,97%);
   cursor: pointer;
   min-width: 32px;
   text-align: center;
 }
 
-div#path > div#submit:hover {
-  color: hsl(201,60%,97%);
+div#submit:hover, div#submit:focus {
+  outline: none;
+  background: hsl(201,60%,70%);
+}
+
+div#submit:focus {
+  color: hsl(201,60%,100%);
 }
 
 div#path > div#submit:active {
@@ -86,7 +117,7 @@ div#path > div#parts {
   -webkit-flex-wrap: nowrap;
   justify-content: center;
   -webkit-justify-content: center;
-  align-items: baseline;
+  align-items: middle;
   -webkit-align-items: stretch;
   padding: 0;
   margin-left: 0;
@@ -121,6 +152,10 @@ div#parts > div#search {
   background: hsl(205,38%,100%);
 }
 
+div#parts > div#search:first-child {
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+}
 
 div#search::before {
   display: inline-block;
@@ -139,11 +174,6 @@ div#search::before {
   overflow: hidden;
 }
 
-/*div#path.endpoint > div#search::before {
-  content: '\f406';
-  font-size: 10px;
-}
-*/
 div.param + div#search {
   margin-left: 0;
 }
@@ -180,10 +210,12 @@ div#lookup li {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: hsl(202,10%,40%);
+  font-weight: 100;
 }
 
 div#lookup li.highlight {
-  background-color: hsl(205,38%,96%);
+  background-color: hsl(205,38%,94%);
 }
 
 div#lookup li:last-child {
@@ -192,14 +224,20 @@ div#lookup li:last-child {
 
 div#lookup li > code {
   color: hsl(202,68%,44%);
+  margin-right: 5px;
+  display: inline-block;
 }
 
 div#lookup li > span {
-  display: inline-block;
-  margin-right: 5px;
   font-family: "bitstream_vera_sans_monoroman";
   color: hsl(202,68%,80%);
   width: 45px;
+}
+
+div#lookup li > em, div#lookup li > strong {
+  font-weight: 100;
+  font-style: italic;
+  color: hsl(202,10%,40%);
 }
 
 div#lookup li > p {
@@ -213,8 +251,9 @@ div#lookup li > p {
 }
 
 div#lookup li strong {
-  font-weight: 100;
+  font-weight: normal;
   text-transform: capitalize;
+  display: none;
 }
 
 div#lookup li strong:after {
@@ -224,4 +263,29 @@ div#lookup li strong:after {
 div#params {
   background: hsl(205,38%,94%);
   min-height: 45px;
+}
+
+div#methods {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+
+div#methods ul {
+  position: relative;
+  top: 1px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: hsl(201,60%,70%);
+  color: hsl(201,60%,97%);
+}
+
+div#methods li {
+  padding: 8px 10px;
+}
+
+div#methods li.highlight {
+  background: hsl(201,60%,60%);
 }
