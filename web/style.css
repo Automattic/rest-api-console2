@@ -80,7 +80,8 @@ div#method.enabled:hover, div#method.enabled:active, div#method:focus {
 }
 
 div#submit {
-  background: hsl(201,60%,60%);
+  background: url(res/return-@2x.png) no-repeat center center hsl(201,60%,60%);
+  background-size: 24px 24px;
   color: hsl(201,60%,97%);
   cursor: pointer;
   min-width: 32px;
@@ -89,16 +90,13 @@ div#submit {
 
 div#submit:hover, div#submit:focus {
   outline: none;
-  background: hsl(201,60%,70%);
-}
-
-div#submit:focus {
-  color: hsl(201,60%,100%);
+  background-color: hsl(201,60%,70%);
 }
 
 div#path > div#submit:active {
-  background: hsl(201,60%,100%);
   color: hsl(201,60%,70%);
+  background-color: hsl(201,60%,100%);
+  background-image: url(res/return-dark-@2x.png);
 }
 
 div#path > div#parts {
@@ -158,18 +156,15 @@ div#parts > div#search:first-child {
 div#search::before {
   display: inline-block;
   vertical-align: -2px;
-  font-family: Genericons;
-  content: '\f400';
-  background: hsl(201,60%,60%);
+  content: '';
   color: #FFF;
   border-radius: 100%;
   width: 24px;
   height: 24px;
-  line-height: 24px;
-  font-size: 16px;
-  text-align: center;
   opacity: 0.75;
   overflow: hidden;
+  background: url(res/search-@2x.png) no-repeat center center hsl(201,60%,60%);
+  background-size: 16px 16px;
 }
 
 div.param + div#search {
@@ -180,13 +175,17 @@ div#search:hover::before {
   opacity: 1.0;
 }
 
+div.endpoint div#search::before {
+  background-image: url(res/close-@2x.png);
+}
+
 div#parts > div#lookup {
   position: absolute;
   padding: 0;
   left: 0;
   right: 0;
   top: 100%;
-  z-index: 1;
+  z-index: 3;
   background: none;
   overflow: visible;
 }
@@ -262,6 +261,7 @@ div#methods {
   top: 100%;
   left: 0;
   right: 0;
+  z-index: 2;
 }
 
 div#methods ul {
@@ -295,6 +295,7 @@ section#parameters {
   -webkit-justify-content: center;
   align-items: middle;
   -webkit-align-items: stretch;
+  position:relative;
 }
 
 section#parameters > div {
@@ -307,10 +308,8 @@ section#parameters > div {
   max-width: 50%;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
-}
-
-section#parameters > div {
   padding: 16px;
+  position: relative;
 }
 
 section#parameters > div:first-child {
@@ -321,16 +320,24 @@ section#parameters > div:last-child {
   padding-left: 8px;
 }
 
-section#parameters > div > div {
+section#parameters > div.disabled {
+  opacity: 0.5;
+}
+
+section#parameters div.raw {
+  font-family: "bitstream_vera_sans_monoroman";
   background: hsl(240,100%,100%);
+  color: hsl(202,68%,44%);
   min-height: 50px;
   padding: 8px;
   max-width: 100%;
   word-break: break-all;
   word-break: break-word;
-  background: hsl(240,100%,100%);
-  font-family: "bitstream_vera_sans_monoroman";
-  color: hsl(202,68%,44%);
+  font-size: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
 }
 
 section#parameters header {
@@ -349,9 +356,48 @@ section#parameters table {
   border-collapse: collapse;
 }
 
-section#parameters section {
-  max-height: 220px;
+section#parameters div.scroller {
+  max-height: 222px;
   overflow-y: scroll;
+}
+
+div.container {
+  position: relative;
+}
+
+div.container::after {
+  content: "";
+  bottom: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  z-index: 1;
+  position: absolute;
+  background: linear-gradient(hsla(0,0%,0%,0.0), hsla(0,0%,0%,0.2));
+  background: -webkit-linear-gradient(hsla(0,0%,0%,0.0), hsla(0,0%,0%,0.2));
+  background: -moz-linear-gradient(hsla(0,0%,0%,0.0), hsla(0,0%,0%,0.2));
+}
+
+div.container::before {
+  content: "";
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: #F00;
+  z-index: 1;
+  position: absolute;
+  background: linear-gradient(hsla(0,0%,0%,0.2), hsla(0,0%,0%,0.0));
+  background: -webkit-linear-gradient(hsla(0,0%,0%,0.2), hsla(0,0%,0%,0.0));
+  background: -moz-linear-gradient(hsla(0,0%,0%,0.2), hsla(0,0%,0%,0.0));
+}
+
+div.container.at-top::before {
+  opacity: 0;
+}
+
+div.container.at-bottom::after {
+  opacity: 0;
 }
 
 section#parameters th, section#parameters td {
@@ -387,18 +433,6 @@ section#parameters th {
   cursor: default;
 }
 
-section#parameters div.raw {
-  max-height: 220px;
-  overflow-y: auto;
-  box-sizing: border-box;
-  -webkit-box-sizing: border-box;
-  font-size: 12px;
-}
-
 section#parameters div:focus {
   outline: none;
-}
-
-section#parameters > div.disabled {
-  opacity: 0.5;
 }

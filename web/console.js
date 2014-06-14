@@ -775,9 +775,11 @@ function ParamBuilder(node, options) {
   this.inputListener = this.onInput.bind(this);
   this.pasteListener = this.onPaste.bind(this);
 
-  this.section = $('<section></section>').appendTo(this.node);
+  this.section = $('<div></div>').addClass('container').appendTo(this.node);
 
-  this.table = $('<table></table>').addClass(this.options.tableClass).appendTo(this.section);
+  this.scroller = $('<div></div>').addClass('scroller').appendTo(this.section);
+
+  this.table = $('<table></table>').addClass(this.options.tableClass).appendTo(this.scroller);
   this.raw = $('<div></div>')
     .addClass(this.options.rawClass)
     .appendTo(node);
@@ -789,6 +791,9 @@ function ParamBuilder(node, options) {
   this.params = {};
 
   this.section.hide();
+
+  this.scroller.on('scroll', this.onScroll.bind(this));
+
 }
 
 util.inherits(ParamBuilder, events.EventEmitter);
@@ -814,7 +819,9 @@ ParamBuilder.prototype.setupInput = function(field, func) {
 ParamBuilder.prototype.setupFieldInput = function(name, node) {
 
   var format = function(builder) {
-    builder.setParam(name, node.text());
+    var value = node.html().replace(/<br><br>$/, '\n').replace(/<br>/g, '\n');
+    console.log('value', value);
+    builder.setParam(name, value);
   };
 
   return this.setupInput(node, format);
@@ -870,6 +877,8 @@ ParamBuilder.prototype.setValue = function(v) {
     $(e.currentTarget).parents('tr').find('div').focus();
   });
 
+  this.updateScroller();
+
 };
 
 ParamBuilder.prototype.enable = function() {
@@ -916,6 +925,7 @@ ParamBuilder.prototype.reset = function() {
 
 ParamBuilder.prototype.onInput = function(e) {
   if (e.which === 13) {
+    document.execCommand('insertHTML', false, '<br><br>');
     e.preventDefault();
     return false;
   }
@@ -925,9 +935,39 @@ ParamBuilder.prototype.onPaste = function(e) {
 
   var content = e.clipboardData.getData('text/plain');
   e.preventDefault();
-  document.execCommand('insertText', false, content);
+  document.execCommand('insertHTML', false, content.replace(/\n$/, '<br><br>').replace(/\n/g, '<br>'));
   return false;
 
+};
+
+ParamBuilder.prototype.onScroll = function(e) {
+
+  var node = e.currentTarget,
+      scroller = $(node);
+
+  this.updateScroller();
+
+};
+
+ParamBuilder.prototype.updateScroller = function() {
+
+  var node = this.scroller.get(0),
+      scrollTop = node.scrollTop,
+      atTop = scrollTop === 0,
+      atBottom = node.scrollHeight - scrollTop === node.clientHeight;
+
+  if (this.section.hasClass('at-top') && !atTop) {
+    this.section.removeClass('at-top');
+  } else if (!this.section.hasClass('at-top') && atTop) {
+    this.section.addClass('at-top');
+  }
+
+  if (this.section.hasClass('at-bottom') && !atBottom) {
+    this.section.removeClass('at-bottom');
+  } else if (!this.section.hasClass('at-bottom') && atBottom) {
+    this.section.addClass('at-bottom');
+  }
+  
 };
 
 module.exports = ParamBuilder;
@@ -976,6 +1016,8 @@ function PathField(node, options) {
   }).bind(this));
 
   this.lookupPane.on('select', this.options.onSelect);
+
+  this.keyListener = this.onKeydown.bind(this);
 
   $(document).on('keydown', this.onKeydown.bind(this));
 
@@ -1184,6 +1226,11 @@ function buildNode(part) {
           e.preventDefault();
           field.lookupPane.highlightNext();
           return;
+        } else if (e.which == 13) {
+          console.log("? %b", hasSelection);
+          e.preventDefault();
+          if (!hasSelection) field.lookupPane.selectHighlighted();
+          return false;
         }
       })
       .on('keyup', function() {
