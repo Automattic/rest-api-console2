@@ -260,6 +260,7 @@ var path = require('../path'),
     PathField = require('./path_field'),
     LookupPane = require('./lookup_pane'),
     MethodSelector = require('./method_selector'),
+    ParamBuilder = require('./param_builder'),
     liquidemetal = require('liquidmetal');
 
 if (!window) throw new Error("Not a browser window.");
@@ -268,6 +269,8 @@ $(function() {
 
   var endpoints = [],
       methodSelector = new MethodSelector($('#method'), {'container':$('#methods'),'label':$('#method span')}),
+      queryBuilder = new ParamBuilder($('#query'), {'title':'Query'}),
+      bodyBuilder = new ParamBuilder($('#body'), {'title':'Body'}),
       pathField = new PathField($('#path'), {
         'default_path':new path.DefaultPath(),
         'itemTemplate': function(item) {
@@ -284,6 +287,10 @@ $(function() {
           pathField.setValue(endpointPath);
           methodSelector.setValue(endpoint.method);
           methodSelector.disable();
+
+          queryBuilder.setValue(endpoint.request.query);
+
+          bodyBuilder.setValue(endpoint.request.body);
         },
         'onSearch': function(q){
             var term = q.replace(/\//g, ' ').toUpperCase().trim(),
@@ -314,8 +321,10 @@ $(function() {
         } // PathField options
       ); // PathField constructor
 
+  bodyBuilder.disable();
+
   methodSelector.on('enabled', function(){
-    methodSelector.node.attr('tabindex','0').addClass('enabled');
+    methodSelector.node.attr('tabindex','1').addClass('enabled');
   });
 
   methodSelector.on('disabled', function(){
@@ -324,6 +333,12 @@ $(function() {
 
   methodSelector.on('change', function() {
     pathField.focus();
+
+    if (methodSelector.getValue() === 'GET') {
+      bodyBuilder.disable();
+    } else {
+      bodyBuilder.enable();
+    }
   });
 
   pathField.on('submit', function(path){
@@ -332,6 +347,8 @@ $(function() {
 
   pathField.on('reset', function(){
     methodSelector.enable();
+    queryBuilder.reset();
+    bodyBuilder.reset();
   });
 
   pathField.focus();
@@ -345,14 +362,28 @@ $(function() {
       return false;
     }
 
+    if (e.which == 191 && e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) { // "/"
+      e.preventDefault();
+      pathField.focus();
+      return false;
+    }
+
   });
 
   $.getJSON("help.json", function(response) {
     endpoints = response.body;
   });
 
+  bodyBuilder.on('disable', function() {
+    bodyBuilder.node.addClass('disabled');
+  });
+
+  bodyBuilder.on('enable', function() {
+    bodyBuilder.node.removeClass('disabled');
+  });
+
 });
-},{"../path":2,"./lookup_pane":6,"./method_selector":7,"./path_field":8,"liquidmetal":9}],6:[function(require,module,exports){
+},{"../path":2,"./lookup_pane":6,"./method_selector":7,"./param_builder":8,"./path_field":9,"liquidmetal":10}],6:[function(require,module,exports){
 var events = require('events'),
     util = require('util');
 
@@ -490,7 +521,7 @@ LookupPane.prototype.onHover = function(e) {
 };
 
 module.exports = LookupPane;
-},{"events":10,"util":14}],7:[function(require,module,exports){
+},{"events":11,"util":18}],7:[function(require,module,exports){
 var events = require('events'),
     util = require('util');
 
@@ -717,7 +748,177 @@ MethodSelector.prototype.toggle = function() {
 };
 
 module.exports = MethodSelector;
-},{"events":10,"util":14}],8:[function(require,module,exports){
+},{"events":11,"util":18}],8:[function(require,module,exports){
+var events = require('events'),
+    util = require('util'),
+    querystring = require('querystring'),
+    fn = require('../fn');
+
+function ParamBuilder(node, options) {
+  events.EventEmitter.apply(this);
+
+  this.enabled = true;
+
+  this.options = $.extend({
+    'title'      : null,
+    'rawClass'   : 'raw',
+    'tableClass' : 'table'
+  }, options);
+
+  this.node = node;
+
+  this.node.append($("<header></header>").text(this.options.title));
+
+  this.focusListener = this.onFocus.bind(this);
+  this.blurListener = this.onBlur.bind(this);
+  this.changeListener = this.onChange.bind(this);
+  this.inputListener = this.onInput.bind(this);
+
+  this.table = $('<table></table>').addClass(this.options.tableClass).appendTo(node);
+  this.raw = $('<div></div>')
+    .addClass(this.options.rawClass)
+    .appendTo(node);
+
+  this.setupInput(this.raw, function(builder, e){
+    builder.rawParams = builder.raw.text();
+  });
+
+  this.params = {};
+
+  this.table.hide();
+}
+
+util.inherits(ParamBuilder, events.EventEmitter);
+
+ParamBuilder.prototype.setupInput = function(field, func) {
+
+  if (!func) {
+    formatter = function(){};
+  }
+
+  field
+    .attr("contenteditable",true)
+    .attr("tabindex","1")
+    .on('focus', this.focusListener)
+    .on('blur', this.blurListener)
+    .on('keydown', this.inputListener)
+    .on('keyup', fn.arglock(this.changeListener, func));
+
+  return field;
+};
+
+ParamBuilder.prototype.setupFieldInput = function(name, node) {
+
+  var format = function(builder) {
+    builder.setParam(name, node.text());
+  };
+
+  return this.setupInput(node, format);
+};
+
+ParamBuilder.prototype.setParam = function(name, value) {
+
+  if (value === "") {
+    delete this.params[name];
+  } else {
+    this.params[name] = value;
+  }
+
+  this.raw.text(querystring.stringify(this.params));
+  this.emit('change');
+
+};
+
+ParamBuilder.prototype.getParam = function(name) {
+  var value = this.params[name];
+
+  return value || "";
+
+};
+
+ParamBuilder.prototype.setValue = function(v) {
+
+  var rows = $([]);
+
+  if (!$.isPlainObject(v)) {
+    v = {};
+    this.table.hide();
+    this.raw.show();
+    return;
+  }
+
+  this.table.show();
+  this.raw.hide();
+
+  for(var name in v) {
+    rows = rows.add($("<tr></tr>")
+      .append($("<th></th>").text(name))
+      .append($("<td></td>").append(this.setupFieldInput(name, $("<div></div>").text(this.getParam(name))))
+    ));
+  }
+
+  // remove all existing listeners from table editables
+  this.table.find('div').off();
+  // remove existing rows
+  this.table.find('tr').remove();
+  this.table.append(rows);
+  this.table.on('click', 'th', function(e){
+    $(e.currentTarget).parents('tr').find('div').focus();
+  });
+
+};
+
+ParamBuilder.prototype.enable = function() {
+
+  this.enabled = true;
+
+  this.table.find('div').add(this.raw.find('div'))
+    .attr('contenteditable', true)
+    .attr('tabindex', '1');
+
+  this.emit('enable');
+
+};
+
+ParamBuilder.prototype.disable = function() {
+
+  this.enabled = false;
+  // remove all focusability
+  this.table.find('div').add(this.raw)
+    .attr('contenteditable', null)
+    .attr('tabindex', null);
+
+  this.emit('disable');
+
+};
+
+ParamBuilder.prototype.onFocus = function() {
+};
+
+ParamBuilder.prototype.onBlur = function() {
+};
+
+ParamBuilder.prototype.onChange = function(fn, e) {
+  var target = $(e.currentTarget),
+      query = querystring.parse(target.text());
+
+  fn(this, e);
+  
+};
+
+ParamBuilder.prototype.reset = function() {
+  this.setValue(null);
+};
+
+ParamBuilder.prototype.onInput = function(e) {
+  if (e.which === 13) {
+    e.preventDefault();
+    return false;
+  }
+};
+
+module.exports = ParamBuilder;
+},{"../fn":1,"events":11,"querystring":16,"util":18}],9:[function(require,module,exports){
 var events = require('events'),
     util = require('util'),
     LookupPane = require('./lookup_pane'),
@@ -898,15 +1099,12 @@ PathField.prototype.onKeydown = function(e) {
 
 
   if (e.which == 13) {
-    e.preventDefault();
 
     if (!hasSelection && this.lookupPane.selectHighlighted()) {
+      e.preventDefault();
       return false;
     }
 
-    this.buildPath();
-
-    return false;
   }
 
   if (e.which == 27) {
@@ -919,12 +1117,6 @@ PathField.prototype.onKeydown = function(e) {
       this.lookupPane.hide();
     }
 
-    return false;
-  }
-
-  if (e.which == 191 && !this.focused) { // "/"
-    e.preventDefault();
-    this.focus();
     return false;
   }
 
@@ -961,7 +1153,7 @@ function buildNode(part) {
     field.focusable_parts.push({node:node.get(0), part:part});
     node.text(field.getParam(part.name) || part.getLabel());
     node
-      .attr("tabindex", 0)
+      .attr("tabindex", 1)
       .on('keydown', function(e) {
         var hasSelection = field.hasSelection();
         if (e.which == 38 && !hasSelection) { // up
@@ -999,7 +1191,7 @@ function buildNode(part) {
 
 module.exports = PathField;
 
-},{"../fn":1,"./lookup_pane":6,"events":10,"util":14}],9:[function(require,module,exports){
+},{"../fn":1,"./lookup_pane":6,"events":11,"util":18}],10:[function(require,module,exports){
 /**
  * LiquidMetal, version: 1.2.1 (2012-04-21)
  *
@@ -1136,7 +1328,7 @@ module.exports = PathField;
   }
 })(typeof window !== 'undefined' ? window : this);
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1441,7 +1633,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -1466,7 +1658,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1531,14 +1723,193 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+// If obj.hasOwnProperty has been overridden, then calling
+// obj.hasOwnProperty(prop) will break.
+// See: https://github.com/joyent/node/issues/1707
+function hasOwnProperty(obj, prop) {
+  return Object.prototype.hasOwnProperty.call(obj, prop);
+}
+
+module.exports = function(qs, sep, eq, options) {
+  sep = sep || '&';
+  eq = eq || '=';
+  var obj = {};
+
+  if (typeof qs !== 'string' || qs.length === 0) {
+    return obj;
+  }
+
+  var regexp = /\+/g;
+  qs = qs.split(sep);
+
+  var maxKeys = 1000;
+  if (options && typeof options.maxKeys === 'number') {
+    maxKeys = options.maxKeys;
+  }
+
+  var len = qs.length;
+  // maxKeys <= 0 means that we should not limit keys count
+  if (maxKeys > 0 && len > maxKeys) {
+    len = maxKeys;
+  }
+
+  for (var i = 0; i < len; ++i) {
+    var x = qs[i].replace(regexp, '%20'),
+        idx = x.indexOf(eq),
+        kstr, vstr, k, v;
+
+    if (idx >= 0) {
+      kstr = x.substr(0, idx);
+      vstr = x.substr(idx + 1);
+    } else {
+      kstr = x;
+      vstr = '';
+    }
+
+    k = decodeURIComponent(kstr);
+    v = decodeURIComponent(vstr);
+
+    if (!hasOwnProperty(obj, k)) {
+      obj[k] = v;
+    } else if (isArray(obj[k])) {
+      obj[k].push(v);
+    } else {
+      obj[k] = [obj[k], v];
+    }
+  }
+
+  return obj;
+};
+
+var isArray = Array.isArray || function (xs) {
+  return Object.prototype.toString.call(xs) === '[object Array]';
+};
+
+},{}],15:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+var stringifyPrimitive = function(v) {
+  switch (typeof v) {
+    case 'string':
+      return v;
+
+    case 'boolean':
+      return v ? 'true' : 'false';
+
+    case 'number':
+      return isFinite(v) ? v : '';
+
+    default:
+      return '';
+  }
+};
+
+module.exports = function(obj, sep, eq, name) {
+  sep = sep || '&';
+  eq = eq || '=';
+  if (obj === null) {
+    obj = undefined;
+  }
+
+  if (typeof obj === 'object') {
+    return map(objectKeys(obj), function(k) {
+      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
+      if (isArray(obj[k])) {
+        return map(obj[k], function(v) {
+          return ks + encodeURIComponent(stringifyPrimitive(v));
+        }).join(sep);
+      } else {
+        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
+      }
+    }).join(sep);
+
+  }
+
+  if (!name) return '';
+  return encodeURIComponent(stringifyPrimitive(name)) + eq +
+         encodeURIComponent(stringifyPrimitive(obj));
+};
+
+var isArray = Array.isArray || function (xs) {
+  return Object.prototype.toString.call(xs) === '[object Array]';
+};
+
+function map (xs, f) {
+  if (xs.map) return xs.map(f);
+  var res = [];
+  for (var i = 0; i < xs.length; i++) {
+    res.push(f(xs[i], i));
+  }
+  return res;
+}
+
+var objectKeys = Object.keys || function (obj) {
+  var res = [];
+  for (var key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) res.push(key);
+  }
+  return res;
+};
+
+},{}],16:[function(require,module,exports){
+'use strict';
+
+exports.decode = exports.parse = require('./decode');
+exports.encode = exports.stringify = require('./encode');
+
+},{"./decode":14,"./encode":15}],17:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],14:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2128,4 +2499,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require("K/m7xv"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":13,"K/m7xv":12,"inherits":11}]},{},[5])
+},{"./support/isBuffer":17,"K/m7xv":13,"inherits":12}]},{},[5])

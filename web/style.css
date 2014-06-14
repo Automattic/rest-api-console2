@@ -7,10 +7,6 @@ pre, code {
   font-family: "bitstream_vera_sans_monoroman";
 }
 
-section#builder {
-  
-}
-
 div#path {
   background: hsl(202,68%,44%);
   padding: 16px;
@@ -108,7 +104,6 @@ div#path > div#submit:active {
 div#path > div#parts {
   flex-grow: 1;
   -webkit-flex-grow: 1;
-  background: none;  
   display: flex;
   display: -webkit-flex;
   flex-direction: row;
@@ -123,11 +118,14 @@ div#path > div#parts {
   margin-left: 0;
   position: relative;
   overflow: visible;
+  background: none;
 }
 
 div#parts > div.param {
   flex-grow: 1;
   -webkit-flex-grow: 1;
+  flex-shrink: 0;
+  -webkit-flex-shrink: 0;
   font-family: "bitstream_vera_sans_monoroman";
   background: hsl(205,38%,100%);
   color: hsl(202,50%,70%);
@@ -260,11 +258,6 @@ div#lookup li strong:after {
   content: ':';
 }
 
-div#params {
-  background: hsl(205,38%,94%);
-  min-height: 45px;
-}
-
 div#methods {
   position: absolute;
   top: 100%;
@@ -288,4 +281,103 @@ div#methods li {
 
 div#methods li.highlight {
   background: hsl(201,60%,60%);
+}
+
+section#parameters {
+  background: hsl(205,38%,94%);
+  font-size: 18px;
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: row;
+  -webkit-flex-direction: row;
+  flex-wrap: nowrap;
+  -webkit-flex-wrap: nowrap;
+  justify-content: center;
+  -webkit-justify-content: center;
+  align-items: middle;
+  -webkit-align-items: stretch;
+}
+
+section#parameters > div {
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+  flex-shrink: 0;
+  -webkit-flex-shrink: 0;
+  min-height: 20px;
+  min-width: 50%;
+  max-width: 50%;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+}
+
+section#parameters > div {
+  padding: 16px;
+}
+
+section#parameters > div:first-child {
+  padding-right: 8px;
+}
+
+section#parameters > div:last-child {
+  padding-left: 8px;
+}
+
+section#parameters > div > div {
+  background: hsl(240,100%,100%);
+  min-height: 50px;
+  padding: 8px;
+  max-width: 100%;
+  word-break: break-all;
+  word-break: break-word;
+}
+
+section#parameters header {
+  background: hsl(204,33%,97%);
+  color: hsl(203,53%,71%);
+  padding: 8px;
+  font-weight: normal;
+  font-size: 14px;
+  text-transform: uppercase;
+  border-bottom: 1px solid hsl(205,38%,94%);
+}
+
+section#parameters table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
+section#parameters th, section#parameters td {
+  vertical-align: top;
+  border-bottom: 1px solid hsl(205,38%,94%);
+  padding: 0;
+}
+
+section#parameters td div {
+  padding: 8px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-all;
+  word-break: break-word;
+  background: hsl(240,100%,100%);
+}
+
+section#parameters th {
+  width: 30%;
+  padding: 8px;
+  font-weight: normal;
+  background: hsl(204,33%,97%);
+  text-align: left;
+  color: hsl(200,100%,38%);
+  font-size: 14px;
+  cursor: default;
+}
+
+section#parameters div:focus {
+  outline: none;
+}
+
+section#parameters > div.disabled {
+  opacity: 0.5;
 }
