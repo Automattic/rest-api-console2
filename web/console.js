@@ -916,7 +916,8 @@ ParamBuilder.prototype.onChange = function(fn, e) {
       query = querystring.parse(target.text());
 
   fn(this, e);
-  
+
+  this.updateScroller();
 };
 
 ParamBuilder.prototype.reset = function() {
