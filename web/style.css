@@ -251,7 +251,6 @@ div#lookup li > p {
 div#lookup li strong {
   font-weight: normal;
   text-transform: capitalize;
-  display: none;
 }
 
 div#lookup li strong:after {
@@ -329,6 +328,9 @@ section#parameters > div > div {
   max-width: 100%;
   word-break: break-all;
   word-break: break-word;
+  background: hsl(240,100%,100%);
+  font-family: "bitstream_vera_sans_monoroman";
+  color: hsl(202,68%,44%);
 }
 
 section#parameters header {
@@ -347,6 +349,11 @@ section#parameters table {
   border-collapse: collapse;
 }
 
+section#parameters section {
+  max-height: 220px;
+  overflow-y: scroll;
+}
+
 section#parameters th, section#parameters td {
   vertical-align: top;
   border-bottom: 1px solid hsl(205,38%,94%);
@@ -355,12 +362,18 @@ section#parameters th, section#parameters td {
 
 section#parameters td div {
   padding: 8px;
+  font-size: 14px;
   max-width: 100%;
+  min-height: 36px;
   overflow: hidden;
   text-overflow: ellipsis;
   word-break: break-all;
   word-break: break-word;
   background: hsl(240,100%,100%);
+  font-family: "bitstream_vera_sans_monoroman";
+  color: hsl(202,68%,44%);
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
 }
 
 section#parameters th {
@@ -372,6 +385,14 @@ section#parameters th {
   color: hsl(200,100%,38%);
   font-size: 14px;
   cursor: default;
+}
+
+section#parameters div.raw {
+  max-height: 220px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  font-size: 12px;
 }
 
 section#parameters div:focus {
