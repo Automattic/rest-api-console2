@@ -27,7 +27,6 @@ div#path > div {
   flex-grow: 0;
   -webkit-flex-grow: 0;
   padding: 10px;
-  margin-left: 1px;
 }
 
 div#parts > div {
@@ -36,14 +35,9 @@ div#parts > div {
   -webkit-flex-grow: 0;
   background: hsl(205,38%,94%);
   color: hsl(202,68%,44%);
-  margin-left: 1px;
   line-height: 24px;
   overflow: hidden;
   text-overflow: ellipsis ellipsis;
-}
-
-div#path > div:first-child {
-  margin-left: 0px;
 }
 
 div#method {
@@ -113,7 +107,6 @@ div#path > div#parts {
   align-items: middle;
   -webkit-align-items: stretch;
   padding: 0;
-  margin-left: 0;
   position: relative;
   overflow: visible;
   background: none;
@@ -144,7 +137,7 @@ div.param.modified::before, div.param:focus::before {
   visibility: hidden;
 }
 
-div#parts > div.segment:nth-last-child(3):first-child {
+div#parts > div.segment:nth-last-child(3) {
   flex-grow: 1;
   -webkit-flex-grow: 1;
 }
@@ -159,9 +152,8 @@ div#parts > div#search {
   background: hsl(205,38%,100%);
 }
 
-div#parts > div#search:first-child {
-  flex-grow: 1;
-  -webkit-flex-grow: 1;
+div#parts > div:first-child {
+  margin-left: 0;
 }
 
 div#search::before {
@@ -178,16 +170,21 @@ div#search::before {
   background-size: 16px 16px;
 }
 
-div.param + div#search {
-  margin-left: 0;
-}
-
 div#search:hover::before {
   opacity: 1.0;
 }
 
 div.endpoint div#search::before {
   background-image: url(res/close-@2x.png);
+}
+
+div#search:active::before {
+  background-color: hsl(205,38%,90%);
+  background-image: url(res/search-dark-@2x.png);
+}
+
+div.endpoint div#search:active::before {
+  background-image: url(res/close-dark-@2x.png);
 }
 
 div#parts > div#lookup {
