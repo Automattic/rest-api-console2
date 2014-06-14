@@ -820,7 +820,6 @@ ParamBuilder.prototype.setupFieldInput = function(name, node) {
 
   var format = function(builder) {
     var value = node.html().replace(/<br><br>$/, '\n').replace(/<br>/g, '\n');
-    console.log('value', value);
     builder.setParam(name, value);
   };
 
@@ -1202,19 +1201,18 @@ function buildNode(part) {
       node = $("<div></div>")
               .text(part.getLabel())
               .addClass(part.getType())
-              .attr('contenteditable', part.options.editable)
               .insertBefore(this.partsNode.children(this.options.search));
 
   if (part.options.editable) {
     field.focusable_parts.push({node:node.get(0), part:part});
-    node.text(field.getParam(part.name) || part.getLabel());
+    node.text(field.getParam(part.name));
     node
+      .attr('contenteditable', true)
       .attr("tabindex", 1)
+      .attr("data-label", part.getLabel())
       .on('paste', function(e){
         e.preventDefault();
-
         document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
-
         return false;
       })
       .on('keydown', function(e) {
@@ -1228,7 +1226,6 @@ function buildNode(part) {
           field.lookupPane.highlightNext();
           return;
         } else if (e.which == 13) {
-          console.log("? %b", hasSelection);
           e.preventDefault();
           if (!hasSelection) field.lookupPane.selectHighlighted();
           return false;
@@ -1236,20 +1233,22 @@ function buildNode(part) {
       })
       .on('keyup', function() {
         field.setParam(part.name, node.text());
+        if (field.getParam(part.name) !== '') {
+          node.addClass('modified');
+        } else {
+          node.removeClass('modified');
+        }
       })
       .on('focus', function() {
         var value = field.getParam(part.name);
-        if (value === '') {
-          node.text('');
+        if (value !== '') {
+          node.addClass('modified');
         }
         field.focused = true;
         field.onFocusPart(part, node.get(0));
       })
       .on('blur', function() {
         var val = field.getParam(part.name);
-        if (!val || val === "") {
-          node.text(part.getLabel());
-        }
         field.focused = false;
         field.onBlurPart(part, node);
       });

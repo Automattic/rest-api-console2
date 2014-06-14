@@ -126,10 +126,22 @@ div#parts > div.param {
   -webkit-flex-shrink: 0;
   font-family: "bitstream_vera_sans_monoroman";
   background: hsl(205,38%,100%);
-  color: hsl(202,50%,70%);
+  color: hsl(202,68%,44%);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis "";
+  position: relative;
+}
+
+div.param::before {
+  content: attr(data-label);
+  position: absolute;
+  left: 10px;
+  color: hsl(202,50%,70%);
+}
+
+div.param.modified::before, div.param:focus::before {
+  visibility: hidden;
 }
 
 div#parts > div.segment:nth-last-child(3):first-child {
@@ -139,7 +151,6 @@ div#parts > div.segment:nth-last-child(3):first-child {
 
 div#parts > div.param:focus {
   outline: none;
-  color: hsl(202,68%,44%);
 }
 
 div#parts > div#search {
