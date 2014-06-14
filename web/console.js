@@ -356,13 +356,13 @@ $(function() {
   // global hotkeys
   $(document).on('keydown', function(e) {
 
-    if (e.which == 77 && e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
+    if (e.which == 77 && e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) { // 'm' + ctrl
       e.preventDefault();
       methodSelector.toggle();
       return false;
     }
 
-    if (e.which == 191 && e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) { // "/"
+    if (e.which == 191 && e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) { // '/' + ctrl
       e.preventDefault();
       pathField.focus();
       return false;
@@ -773,8 +773,11 @@ function ParamBuilder(node, options) {
   this.blurListener = this.onBlur.bind(this);
   this.changeListener = this.onChange.bind(this);
   this.inputListener = this.onInput.bind(this);
+  this.pasteListener = this.onPaste.bind(this);
 
-  this.table = $('<table></table>').addClass(this.options.tableClass).appendTo(node);
+  this.section = $('<section></section>').appendTo(this.node);
+
+  this.table = $('<table></table>').addClass(this.options.tableClass).appendTo(this.section);
   this.raw = $('<div></div>')
     .addClass(this.options.rawClass)
     .appendTo(node);
@@ -785,7 +788,7 @@ function ParamBuilder(node, options) {
 
   this.params = {};
 
-  this.table.hide();
+  this.section.hide();
 }
 
 util.inherits(ParamBuilder, events.EventEmitter);
@@ -802,7 +805,8 @@ ParamBuilder.prototype.setupInput = function(field, func) {
     .on('focus', this.focusListener)
     .on('blur', this.blurListener)
     .on('keydown', this.inputListener)
-    .on('keyup', fn.arglock(this.changeListener, func));
+    .on('keyup', fn.arglock(this.changeListener, func))
+    .on('paste', this.pasteListener);
 
   return field;
 };
@@ -842,12 +846,12 @@ ParamBuilder.prototype.setValue = function(v) {
 
   if (!$.isPlainObject(v)) {
     v = {};
-    this.table.hide();
+    this.section.hide();
     this.raw.show();
     return;
   }
 
-  this.table.show();
+  this.section.show();
   this.raw.hide();
 
   for(var name in v) {
@@ -872,7 +876,7 @@ ParamBuilder.prototype.enable = function() {
 
   this.enabled = true;
 
-  this.table.find('div').add(this.raw.find('div'))
+  this.table.find('div').add(this.raw)
     .attr('contenteditable', true)
     .attr('tabindex', '1');
 
@@ -915,6 +919,15 @@ ParamBuilder.prototype.onInput = function(e) {
     e.preventDefault();
     return false;
   }
+};
+
+ParamBuilder.prototype.onPaste = function(e) {
+
+  var content = e.clipboardData.getData('text/plain');
+  e.preventDefault();
+  document.execCommand('insertText', false, content);
+  return false;
+
 };
 
 module.exports = ParamBuilder;
@@ -1154,6 +1167,13 @@ function buildNode(part) {
     node.text(field.getParam(part.name) || part.getLabel());
     node
       .attr("tabindex", 1)
+      .on('paste', function(e){
+        e.preventDefault();
+
+        document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+
+        return false;
+      })
       .on('keydown', function(e) {
         var hasSelection = field.hasSelection();
         if (e.which == 38 && !hasSelection) { // up
