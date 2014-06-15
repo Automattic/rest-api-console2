@@ -256,6 +256,71 @@ module.exports.PartBuilder = PartBuilder;
 module.exports.PathPart = PathPart;
 
 },{"./part":3}],5:[function(require,module,exports){
+var events = require('events'),
+    util = require('util'),
+    noop = function() {},
+    componentOptions = {
+      'init'         : noop,
+      'beforeChange' : function() { return arguments[0]; },
+      'afterChange'  : noop,
+      'onChange'     : noop,
+      'onReset'      : noop
+    };
+
+function Component(node, options) {
+
+  events.EventEmitter.apply(this, arguments);
+
+  this.node = $(node);
+  this.options = options;
+
+  if (this.options.init) this.options.init.apply(this);
+
+}
+
+util.inherits(Component, events.EventEmitter);
+
+Component.prototype.setValue = function(value) {
+
+  var oldValue = this.value;
+
+  value = this.options.beforeChange.call(this, value);
+
+  if (value === this.value) return;
+
+  this.value = value;
+  this.options.onChange.call(this, this.value, oldValue);
+  this.emit('change', this.value, oldValue);
+  this.options.afterChange.call(this, this.value);
+
+};
+
+Component.prototype.getValue = function() {
+  return this.value;
+};
+
+Component.prototype.reset = function() {
+  this.setValue(this.options.defaultValue);
+  this.options.onReset.apply(this);
+  this.emit('reset');
+};
+
+Component.extend = function(defaultOptions) {
+  var ctr = function(node, options) {
+    var opts = {};
+    $.extend(opts, componentOptions, defaultOptions, options);
+
+    Component.call(this, node, opts);
+  };
+
+  util.inherits(ctr, Component);
+
+  return ctr;
+};
+
+module.exports = Component;
+
+},{"events":12,"util":19}],6:[function(require,module,exports){
 var path = require('../path'),
     PathField = require('./path_field'),
     LookupPane = require('./lookup_pane'),
@@ -272,7 +337,7 @@ $(function() {
       queryBuilder = new ParamBuilder($('#query'), {'title':'Query'}),
       bodyBuilder = new ParamBuilder($('#body'), {'title':'Body'}),
       pathField = new PathField($('#path'), {
-        'default_path':new path.DefaultPath(),
+        'defaultValue':new path.DefaultPath(),
         'itemTemplate': function(item) {
           var listItem = $("<li></li>"),
               method = $("<span></span>").text(item.method).appendTo(listItem),
@@ -383,26 +448,20 @@ $(function() {
   });
 
 });
-},{"../path":2,"./lookup_pane":6,"./method_selector":7,"./param_builder":8,"./path_field":9,"liquidmetal":10}],6:[function(require,module,exports){
-var events = require('events'),
-    util = require('util');
+},{"../path":2,"./lookup_pane":7,"./method_selector":8,"./param_builder":9,"./path_field":10,"liquidmetal":11}],7:[function(require,module,exports){
+var Component = require('./component');
 
-function LookupPane(node, options) {
-  events.EventEmitter.apply(this);
-  this.node = node;
-  this.options = $.extend({
-    'max'            : 10,
-    'template'       : function(item){return $("<li></li>").text(item); },
-    'highlightClass' : 'highlight'
-  }, options);
-
-  this.listNode = $("<ol></ol>").appendTo(this.node);
-  this.node.on('mousedown', 'li', this.onClick.bind(this));
-  this.node.on('mouseenter', 'li', this.onHover.bind(this));
-  this.last_index = -1;
-}
-
-util.inherits(LookupPane, events.EventEmitter);
+LookupPane = Component.extend({
+  'max'            : 10,
+  'template'       : function(item){return $("<li></li>").text(item); },
+  'highlightClass' : 'highlight',
+  'init'           : function() {
+    this.listNode = $("<ol></ol>").appendTo(this.node);
+    this.node.on('mousedown', 'li', this.onClick.bind(this));
+    this.node.on('mouseenter', 'li', this.onHover.bind(this));
+    this.last_index = -1;
+  }
+});
 
 LookupPane.prototype.displayResults = function(results) {
 
@@ -521,44 +580,40 @@ LookupPane.prototype.onHover = function(e) {
 };
 
 module.exports = LookupPane;
-},{"events":11,"util":18}],7:[function(require,module,exports){
-var events = require('events'),
-    util = require('util');
+},{"./component":5}],8:[function(require,module,exports){
+var Component = require('./component');
 
-function MethodSelector(node, options) {
-  events.EventEmitter.apply(this);
+var MethodSelector = Component.extend({
+  'values'         : ['GET', 'POST'],
+  'container'      : this.node,
+  'label'          : this.node,
+  'highlightClass' : 'highlight',
+  'disabledClass'  : 'disabled',
+  'init' : function() {
 
-  this.node = node;
+    this.enabled = true;
 
-  this.options = $.extend({
-    'values'         : ['GET', 'POST'],
-    'container'      : this.node,
-    'label'          : this.node,
-    'highlightClass' : 'highlight',
-    'disabledClass'  : 'disabled'
-  }, options);
+    this.container = this.options.container;
 
-  this.enabled = true;
+    this.container.hide();
 
-  this.container = this.options.container;
+    this.node.on('focus', this.onFocus.bind(this));
+    this.node.on('blur', this.onBlur.bind(this));
+    this.node.on('mouseleave', this.onLeave.bind(this));
+    this.node.on('click', this.onClick.bind(this));
+    this.node.on('mousedown', 'li', this.onClickOption.bind(this));
 
-  this.container.hide();
+    this.keyListener = this.onKeypress.bind(this);
 
-  this.node.on('focus', this.onFocus.bind(this));
-  this.node.on('blur', this.onBlur.bind(this));
-  this.node.on('mouseleave', this.onLeave.bind(this));
-  this.node.on('click', this.onClick.bind(this));
-  this.node.on('mousedown', 'li', this.onClickOption.bind(this));
+    this.setValue(this.options.values[0]);
 
-  this.keyListener = this.onKeypress.bind(this);
-
-  this.setValue(this.options.values[0]);
-
-  this.emit('enabled');
-
-}
-
-util.inherits(MethodSelector, events.EventEmitter);
+    this.emit('enabled');
+  },
+  'onChange' : function(value, oldValue) {
+    this.options.label.text(value);
+    this.refreshItems();
+  }
+});
 
 MethodSelector.prototype.disable = function() {
   this.enabled = false;
@@ -648,19 +703,8 @@ MethodSelector.prototype.setValue = function(v) {
 
   if (!this.enabled) return;
 
-  var current = this.getValue();
+  Component.prototype.setValue.apply(this, arguments);
 
-  if (v === current) return;
-
-  this.options.label.text(v);
-  this.refreshItems();
-
-  this.emit('change');
-
-};
-
-MethodSelector.prototype.getValue = function() {
-  return this.options.label.text();
 };
 
 MethodSelector.prototype.refreshItems = function() {
@@ -729,10 +773,6 @@ MethodSelector.prototype.highlightPrev = function() {
   
 };
 
-MethodSelector.prototype.reset = function() {
-  this.setValue(this.options.values[0]);
-};
-
 MethodSelector.prototype.toggle = function() {
 
   var current = this.getValue(),
@@ -748,55 +788,84 @@ MethodSelector.prototype.toggle = function() {
 };
 
 module.exports = MethodSelector;
-},{"events":11,"util":18}],8:[function(require,module,exports){
-var events = require('events'),
-    util = require('util'),
+},{"./component":5}],9:[function(require,module,exports){
+var Component = require('./component'),
     querystring = require('querystring'),
     fn = require('../fn');
 
-function ParamBuilder(node, options) {
-  events.EventEmitter.apply(this);
+var ParamBuilder = Component.extend({
+  'title'      : null,
+  'rawClass'   : 'raw',
+  'tableClass' : 'table',
+  'init'       : function() {
+    this.enabled = true;
 
-  this.enabled = true;
+    this.node.append($("<header></header>").text(this.options.title));
 
-  this.options = $.extend({
-    'title'      : null,
-    'rawClass'   : 'raw',
-    'tableClass' : 'table'
-  }, options);
+    this.focusListener = this.onFocus.bind(this);
+    this.blurListener = this.onBlur.bind(this);
+    this.changeListener = this.onChange.bind(this);
+    this.inputListener = this.onInput.bind(this);
+    this.pasteListener = this.onPaste.bind(this);
 
-  this.node = node;
+    this.section = $('<div></div>').addClass('container').appendTo(this.node);
 
-  this.node.append($("<header></header>").text(this.options.title));
+    this.scroller = $('<div></div>').addClass('scroller').appendTo(this.section);
 
-  this.focusListener = this.onFocus.bind(this);
-  this.blurListener = this.onBlur.bind(this);
-  this.changeListener = this.onChange.bind(this);
-  this.inputListener = this.onInput.bind(this);
-  this.pasteListener = this.onPaste.bind(this);
+    this.table = $('<table></table>').addClass(this.options.tableClass).appendTo(this.scroller);
+    this.raw = $('<div></div>')
+      .addClass(this.options.rawClass)
+      .appendTo(this.node);
 
-  this.section = $('<div></div>').addClass('container').appendTo(this.node);
+    this.setupInput(this.raw, function(builder, e){
+      builder.rawParams = builder.raw.text();
+    });
 
-  this.scroller = $('<div></div>').addClass('scroller').appendTo(this.section);
+    this.params = {};
 
-  this.table = $('<table></table>').addClass(this.options.tableClass).appendTo(this.scroller);
-  this.raw = $('<div></div>')
-    .addClass(this.options.rawClass)
-    .appendTo(node);
+    this.section.hide();
 
-  this.setupInput(this.raw, function(builder, e){
-    builder.rawParams = builder.raw.text();
-  });
+    this.scroller.on('scroll', this.onScroll.bind(this));
+  },
+  'beforeChange' : function(value) {
+    if ($.isArray(value)) {
+      return null;
+    }
 
-  this.params = {};
+    return value;
+  },
+  'onChange' : function(value, oldValue) {
 
-  this.section.hide();
+    var rows = $([]);
 
-  this.scroller.on('scroll', this.onScroll.bind(this));
+    if (value === null) {
+      this.section.hide();
+      this.raw.show();
+      return;
+    }
 
-}
+    this.section.show();
+    this.raw.hide();
 
-util.inherits(ParamBuilder, events.EventEmitter);
+    for(var name in value) {
+      rows = rows.add($("<tr></tr>")
+        .append($("<th></th>").text(name))
+        .append($("<td></td>").append(this.setupFieldInput(name, $("<div></div>").text(this.getParam(name))))
+      ));
+    }
+
+    // remove all existing listeners from table editables
+    this.table.find('div').off();
+    // remove existing rows
+    this.table.find('tr').remove();
+    this.table.append(rows);
+    this.table.on('click', 'th', function(e){
+      $(e.currentTarget).parents('tr').find('div').focus();
+    });
+
+    this.updateScroller();
+  }
+});
 
 ParamBuilder.prototype.setupInput = function(field, func) {
 
@@ -846,40 +915,6 @@ ParamBuilder.prototype.getParam = function(name) {
 
 };
 
-ParamBuilder.prototype.setValue = function(v) {
-
-  var rows = $([]);
-
-  if (!$.isPlainObject(v)) {
-    v = {};
-    this.section.hide();
-    this.raw.show();
-    return;
-  }
-
-  this.section.show();
-  this.raw.hide();
-
-  for(var name in v) {
-    rows = rows.add($("<tr></tr>")
-      .append($("<th></th>").text(name))
-      .append($("<td></td>").append(this.setupFieldInput(name, $("<div></div>").text(this.getParam(name))))
-    ));
-  }
-
-  // remove all existing listeners from table editables
-  this.table.find('div').off();
-  // remove existing rows
-  this.table.find('tr').remove();
-  this.table.append(rows);
-  this.table.on('click', 'th', function(e){
-    $(e.currentTarget).parents('tr').find('div').focus();
-  });
-
-  this.updateScroller();
-
-};
-
 ParamBuilder.prototype.enable = function() {
 
   this.enabled = true;
@@ -917,10 +952,6 @@ ParamBuilder.prototype.onChange = function(fn, e) {
   fn(this, e);
 
   this.updateScroller();
-};
-
-ParamBuilder.prototype.reset = function() {
-  this.setValue(null);
 };
 
 ParamBuilder.prototype.onInput = function(e) {
@@ -971,111 +1002,89 @@ ParamBuilder.prototype.updateScroller = function() {
 };
 
 module.exports = ParamBuilder;
-},{"../fn":1,"events":11,"querystring":16,"util":18}],9:[function(require,module,exports){
-var events = require('events'),
-    util = require('util'),
+},{"../fn":1,"./component":5,"querystring":17}],10:[function(require,module,exports){
+var Component = require('./component'),
     LookupPane = require('./lookup_pane'),
     fn = require('../fn'),
-    noop = function(){};
+    noop = function(){},
+    util = require('util');
 
-function PathField(node, options) {
-  events.EventEmitter.apply(this);
 
-  this.node = node;
-  this.options =  $.extend({
-    'decorators'  :'#method,#submit,#search,#parts,#lookup',
-    'submit'      :'#submit',
-    'search'      :'#search',
-    'container'   :'#parts',
-    'lookup'      :'#lookup',
-    'onSearch'    :noop,
-    'onSelect'    :noop,
-    'itemTemplate':function(item){
-      return $("<li></li>").text("item");
+var PathField = Component.extend({
+  'decorators'  :'#method,#submit,#search,#parts,#lookup',
+  'submit'      :'#submit',
+  'search'      :'#search',
+  'container'   :'#parts',
+  'lookup'      :'#lookup',
+  'onSearch'    :noop,
+  'onSelect'    :noop,
+  'itemTemplate':function(item){
+    return $("<li></li>").text("item");
+  },
+  'init':function() {
+    this.values = {};
+
+    this.node.on('click', this.options.submit, this.buildPath.bind(this));
+    this.node.on('click', this.options.search, this.onSearch.bind(this));
+    this.partsNode = this.node.find(this.options.container);
+
+    this.lookupPane = new LookupPane($("#lookup"), {
+      template: this.options.itemTemplate
+    });
+
+    this.last_query = "";
+    this.cancel_search = noop;
+
+    this.reset();
+
+    this.search = fn.rateLimit(200, (function(q){
+      var results = this.options.onSearch(q);
+      this.lookupPane.displayResults(results);
+    }).bind(this));
+
+    this.lookupPane.on('select', this.options.onSelect);
+
+    this.keyListener = this.onKeydown.bind(this);
+
+    $(document).on('keydown', this.onKeydown.bind(this));
+  },
+  'onChange' : function(path) {
+    if (!path) {
+      return;
     }
-  }, options);
 
-  this.values = {};
+    this.clearNodes();
 
-  this.node.on('click', this.options.submit, this.buildPath.bind(this));
-  this.node.on('click', this.options.search, this.onSearch.bind(this));
-  this.partsNode = this.node.find(this.options.container);
+    this.node.addClass('endpoint');
+    this.focusable_parts = [];
+    path.parts.forEach(buildNode.bind(this));
 
-  this.lookupPane = new LookupPane($("#lookup"), {
-    template: this.options.itemTemplate
-  });
+    this.focus();
 
-  this.last_query = "";
-  this.cancel_search = noop;
+    if (this.hasSelection()) {
+      this.lookupPane.hide();
+    } else {
+      this.lookupPane.show();
+    }
 
-  this.reset();
-
-  this.search = fn.rateLimit(200, (function(q){
-    var results = this.options.onSearch(q);
-    this.lookupPane.displayResults(results);
-  }).bind(this));
-
-  this.lookupPane.on('select', this.options.onSelect);
-
-  this.keyListener = this.onKeydown.bind(this);
-
-  $(document).on('keydown', this.onKeydown.bind(this));
-
-}
-
-util.inherits(PathField, events.EventEmitter);
-
-PathField.prototype.setValue = function(path) {
-
-  if (path === this.path) {
-    return;
+    this.last_query = "";
+  },
+  'onReset' : function() {
+    this.node.removeClass('endpoint');
   }
-
-  this.changing = true;
-
-  this.clearNodes();
-
-  this.path = path;
-  this.last_query = "";
-
-  if (!path) {
-    this.emit('change');
-    return;
-  }
-
-  this.node.addClass('endpoint');
-  this.focusable_parts = [];
-  path.parts.forEach(buildNode.bind(this));
-
-  this.focus();
-
-  if (this.hasSelection()) {
-    this.lookupPane.hide();
-  } else {
-    this.lookupPane.show();
-  }
-
-  this.emit('change');
-
-};
-
-PathField.prototype.reset = function() {
-  this.setValue(this.options.default_path);
-  this.node.removeClass('endpoint');
-  this.emit('reset');
-};
+});
 
 PathField.prototype.clearNodes = function() {
   this.partsNode.children().not(this.options.decorators).remove();
 };
 
 PathField.prototype.hasSelection = function() {
-  return this.options.default_path !== this.path;
+  return this.options.defaultValue !== this.value;
 };
 
 PathField.prototype.buildPath = function() {
 
-  this.emit('submit', this.path.toString(this.values));
+  this.emit('submit', this.value.toString(this.values));
 
 };
 
@@ -1092,7 +1101,7 @@ PathField.prototype.performSearch = function() {
 
   if (this.hasSelection()) return;
 
-  var query = decodeURI(this.path.toString(this.values));
+  var query = decodeURI(this.value.toString(this.values));
 
   if (query === "") {
     this.last_query = "";
@@ -1117,7 +1126,7 @@ PathField.prototype.getParam = function(name) {
 };
 
 PathField.prototype.onSearch = function() {
-  if (this.path === this.options.default_path) {
+  if (!this.hasSelection()) {
     this.emit('search');
   } else {
     this.reset();
@@ -1262,7 +1271,7 @@ function buildNode(part) {
 
 module.exports = PathField;
 
-},{"../fn":1,"./lookup_pane":6,"events":11,"util":18}],10:[function(require,module,exports){
+},{"../fn":1,"./component":5,"./lookup_pane":7,"util":19}],11:[function(require,module,exports){
 /**
  * LiquidMetal, version: 1.2.1 (2012-04-21)
  *
@@ -1399,7 +1408,7 @@ module.exports = PathField;
   }
 })(typeof window !== 'undefined' ? window : this);
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1704,7 +1713,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -1729,7 +1738,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1794,7 +1803,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1880,7 +1889,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1967,20 +1976,20 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":14,"./encode":15}],17:[function(require,module,exports){
+},{"./decode":15,"./encode":16}],18:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2570,4 +2579,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require("K/m7xv"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":17,"K/m7xv":13,"inherits":12}]},{},[5])
+},{"./support/isBuffer":18,"K/m7xv":14,"inherits":13}]},{},[6])
