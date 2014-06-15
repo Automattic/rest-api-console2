@@ -1231,12 +1231,16 @@ function buildNode(part) {
           return false;
         }
       })
+      .on('keypress', function(e) {
+        if (e.charCode > 0 && !node.hasClass('modified')) {
+          node.addClass('modified');
+        }
+      })
       .on('keyup', function() {
         field.setParam(part.name, node.text());
-        if (field.getParam(part.name) !== '') {
-          node.addClass('modified');
-        } else {
+        if (field.getParam(part.name) === '') {
           node.removeClass('modified');
+          node.html('');
         }
       })
       .on('focus', function() {

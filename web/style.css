@@ -26,15 +26,16 @@ div#path {
 div#path > div {
   flex-grow: 0;
   -webkit-flex-grow: 0;
-  padding: 10px;
+  padding: 8px;
 }
 
 div#parts > div {
-  padding: 10px;
+  font-family: "bitstream_vera_sans_monoroman";
+  padding: 3px 1px 0 1px;
+  line-height: 20px;
   flex-grow: 0;
   -webkit-flex-grow: 0;
-  background: hsl(205,38%,94%);
-  color: hsl(202,68%,44%);
+  color: hsl(202,20%,44%);
   line-height: 24px;
   overflow: hidden;
   text-overflow: ellipsis ellipsis;
@@ -109,37 +110,39 @@ div#path > div#parts {
   padding: 0;
   position: relative;
   overflow: visible;
-  background: none;
+  background: hsl(205,38%,100%);
+  padding: 8px;
 }
 
 div#parts > div.param {
-  flex-grow: 1;
-  -webkit-flex-grow: 1;
-  flex-shrink: 0;
   -webkit-flex-shrink: 0;
-  font-family: "bitstream_vera_sans_monoroman";
-  background: hsl(205,38%,100%);
   color: hsl(202,68%,44%);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis "";
   position: relative;
+  background: hsl(205,38%,94%);
+  border: 1px solid hsl(205,38%,90%);
+  padding-top: 2px;
+  padding-left: 6px;
+  padding-right: 6px;
+  border-radius: 2px;
 }
 
-div.param::before {
+div.param::after {
   content: attr(data-label);
-  position: absolute;
-  left: 10px;
   color: hsl(202,50%,70%);
 }
 
-div.param.modified::before, div.param:focus::before {
-  visibility: hidden;
+div.param.modified::after {
+  display: none;
 }
 
-div#parts > div.segment:nth-last-child(3) {
+div#parts > div:nth-last-child(3):first-child {
   flex-grow: 1;
   -webkit-flex-grow: 1;
+  background: none;
+  border: none;
 }
 
 div#parts > div.param:focus {
@@ -156,7 +159,12 @@ div#parts > div:first-child {
   margin-left: 0;
 }
 
-div#search::before {
+.endpoint #search {
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+}
+
+#search a {
   display: inline-block;
   vertical-align: -2px;
   content: '';
@@ -170,24 +178,26 @@ div#search::before {
   background-size: 16px 16px;
 }
 
-div#search:hover::before {
+#search a:hover {
   opacity: 1.0;
 }
 
-div.endpoint div#search::before {
+.endpoint #search a {
   background-image: url(res/close-@2x.png);
 }
 
-div#search:active::before {
+#search a:active {
   background-color: hsl(205,38%,90%);
   background-image: url(res/search-dark-@2x.png);
 }
 
-div.endpoint div#search:active::before {
+.endpoint #search a:active {
   background-image: url(res/close-dark-@2x.png);
 }
 
 div#parts > div#lookup {
+  font-family: open_sans;
+  font-size: 16px;
   position: absolute;
   padding: 0;
   left: 0;
@@ -245,16 +255,6 @@ div#lookup li > em, div#lookup li > strong {
   color: hsl(202,10%,40%);
 }
 
-div#lookup li > p {
-  margin: 0;
-  padding: 0;
-  color: hsl(202,10%,40%);
-  font-weight: 100;
-  font-style: italic;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 div#lookup li strong {
   font-weight: normal;
   text-transform: capitalize;
@@ -270,6 +270,11 @@ div#methods {
   left: 0;
   right: 0;
   z-index: 2;
+}
+
+div#method > span {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 div#methods ul {
