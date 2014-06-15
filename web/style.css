@@ -122,11 +122,13 @@ div#parts > div.param {
   text-overflow: ellipsis "";
   position: relative;
   background: hsl(205,38%,94%);
-  border: 1px solid hsl(205,38%,90%);
-  padding-top: 2px;
   padding-left: 6px;
   padding-right: 6px;
   border-radius: 2px;
+}
+
+div#parts > div.param:focus {
+  outline: none;
 }
 
 div.param::after {
@@ -145,8 +147,9 @@ div#parts > div:nth-last-child(3):first-child {
   border: none;
 }
 
-div#parts > div.param:focus {
+div#parts > div:nth-last-child(3):first-child:focus {
   outline: none;
+  background: none;
 }
 
 div#parts > div#search {
