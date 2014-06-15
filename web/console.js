@@ -276,6 +276,8 @@ function Component(node, options) {
 
   if (this.options.init) this.options.init.apply(this);
 
+  this.setValue(this.options.defaultValue);
+
 }
 
 util.inherits(Component, events.EventEmitter);
@@ -289,6 +291,7 @@ Component.prototype.setValue = function(value) {
   if (value === this.value) return;
 
   this.value = value;
+
   this.options.onChange.call(this, this.value, oldValue);
   this.emit('change', this.value, oldValue);
   this.options.afterChange.call(this, this.value);
@@ -455,11 +458,24 @@ LookupPane = Component.extend({
   'max'            : 10,
   'template'       : function(item){return $("<li></li>").text(item); },
   'highlightClass' : 'highlight',
+  'defaultValue'   : $(),
   'init'           : function() {
     this.listNode = $("<ol></ol>").appendTo(this.node);
     this.node.on('mousedown', 'li', this.onClick.bind(this));
     this.node.on('mouseenter', 'li', this.onHover.bind(this));
     this.last_index = -1;
+  },
+  'onChange': function(value, oldValue) {
+
+    if (oldValue) oldValue.removeClass(this.options.highlightClass);
+
+    if (!value) {
+      this.last_index = -1;
+      return;
+    }
+
+    this.last_index = value.index();
+    value.addClass(this.options.highlightClass);
   }
 });
 
@@ -514,13 +530,14 @@ LookupPane.prototype.reset = function() {
 LookupPane.prototype.onClick = function(e) {
 
   e.preventDefault();
-  this.selectHighlighted();
+  this.setValue($(e.currentTarget));
+  this.selectCurrent();
   return false;
 };
 
-LookupPane.prototype.selectHighlighted = function() {
+LookupPane.prototype.selectCurrent = function() {
 
-  var index = this.getHighlighted().index(),
+  var index = this.getValue().index(),
       result = this.results ? this.results[index] : false;
 
   if (!result) return false;
@@ -531,52 +548,32 @@ LookupPane.prototype.selectHighlighted = function() {
 
 };
 
-LookupPane.prototype.getHighlighted = function() {
-  return this.listNode.find('.' + this.options.highlightClass);
-};
-
 LookupPane.prototype.highlightNext = function() {
-  var current = this.getHighlighted(),
+  var current = this.getValue(),
       next = current.next();
-
-    current.removeClass(this.options.highlightClass);
 
     if (next.length === 0) {
       next = this.listNode.children().first();
     }
 
-    next.addClass(this.options.highlightClass);
-
-    this.last_index = next.index();
+    this.setValue(next);
 
 };
 
 LookupPane.prototype.highlightPrevious = function() {
-  var current = this.getHighlighted(),
+  var current = this.getValue(),
       prev = current.prev();
-
-    current.removeClass(this.options.highlightClass);
 
     if (prev.length === 0) {
       prev = this.listNode.children().last();
     }
 
-    prev.addClass(this.options.highlightClass);
+    this.setValue(prev);
 
-    this.last_index = prev.index();
 };
 
 LookupPane.prototype.onHover = function(e) {
-  var current = this.getHighlighted(),
-      target = $(e.currentTarget);
-
-  if (target.hasClass(this.options.highlightClass)) return;
-
-  current.removeClass(this.options.highlightClass);
-  target.addClass(this.options.highlightClass);
-
-  this.last_index = target.index();
-
+  this.setValue($(e.currentTarget));
 };
 
 module.exports = LookupPane;
@@ -585,6 +582,7 @@ var Component = require('./component');
 
 var MethodSelector = Component.extend({
   'values'         : ['GET', 'POST'],
+  'defaultValue'   : 'GET',
   'container'      : this.node,
   'label'          : this.node,
   'highlightClass' : 'highlight',
@@ -838,7 +836,7 @@ var ParamBuilder = Component.extend({
 
     var rows = $([]);
 
-    if (value === null) {
+    if (!value) {
       this.section.hide();
       this.raw.show();
       return;
@@ -1035,8 +1033,6 @@ var PathField = Component.extend({
     this.last_query = "";
     this.cancel_search = noop;
 
-    this.reset();
-
     this.search = fn.rateLimit(200, (function(q){
       var results = this.options.onSearch(q);
       this.lookupPane.displayResults(results);
@@ -1049,6 +1045,7 @@ var PathField = Component.extend({
     $(document).on('keydown', this.onKeydown.bind(this));
   },
   'onChange' : function(path) {
+
     if (!path) {
       return;
     }
@@ -1164,7 +1161,7 @@ PathField.prototype.onKeydown = function(e) {
 
   if (e.which == 13) {
 
-    if (!hasSelection && this.lookupPane.selectHighlighted()) {
+    if (!hasSelection && this.lookupPane.selectCurrent()) {
       e.preventDefault();
       return false;
     }
@@ -1236,7 +1233,7 @@ function buildNode(part) {
           return;
         } else if (e.which == 13) {
           e.preventDefault();
-          if (!hasSelection) field.lookupPane.selectHighlighted();
+          if (!hasSelection) field.lookupPane.selectCurrent();
           return false;
         }
       })
