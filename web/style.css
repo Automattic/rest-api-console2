@@ -465,6 +465,7 @@ section#parameters div:focus {
   left: 500px;
   background: hsl(0,0%,10%);
   max-width: 300px;
+  min-width: 150px;
   color: hsl(0,0%,80%);
   font-size: 12px;
   opacity: 0.9;
@@ -531,3 +532,6 @@ section#parameters div:focus {
   color: hsl(195,75%,60%);
 }
 
+#tip em {
+  color: hsl(195,75%,100%);
+}
