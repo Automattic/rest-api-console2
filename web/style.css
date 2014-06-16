@@ -167,7 +167,7 @@ div#parts > div:first-child {
   margin-left: 0;
 }
 
-.endpoint #search {
+div#parts > div:nth-last-child(3) {
   flex-grow: 1;
   -webkit-flex-grow: 1;
 }
@@ -180,27 +180,28 @@ div#parts > div:first-child {
   border-radius: 100%;
   width: 24px;
   height: 24px;
-  opacity: 0.75;
+  opacity: 1;
   overflow: hidden;
-  background: url(res/search-@2x.png) no-repeat center center hsl(201,60%,60%);
+  background: url(res/search-dark-@2x.png) no-repeat center center hsl(201,60%,100%);
   background-size: 16px 16px;
 }
 
 #search a:hover {
-  opacity: 1.0;
-}
-
-.endpoint #search a {
-  background-image: url(res/close-@2x.png);
-}
-
-#search a:active {
   background-color: hsl(205,38%,90%);
   background-image: url(res/search-dark-@2x.png);
 }
 
-.endpoint #search a:active {
+.endpoint #search a {
   background-image: url(res/close-dark-@2x.png);
+}
+
+#search a:active {
+  background-color: hsl(201,60%,60%);
+  background-image: url(res/search-@2x.png);
+}
+
+.endpoint #search a:active {
+  background-image: url(res/close-@2x.png);
 }
 
 div#parts > div#lookup {
