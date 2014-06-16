@@ -341,7 +341,7 @@ $(function() {
       methodSelector = new MethodSelector($('#method'), {'container':$('#methods'),'label':$('#method span')}),
       queryBuilder = new ParamBuilder($('#query'), {'title':'Query'}),
       bodyBuilder = new ParamBuilder($('#body'), {'title':'Body'}),
-      tip = new Tip('#tip');
+      tip = new Tip('#tip'),
       pathField = new PathField($('#path'), {
         'defaultValue':new path.DefaultPath(),
         'itemTemplate': function(item) {
@@ -366,13 +366,20 @@ $(function() {
         'onSearch': function(q){
             var term = q.replace(/\//g, ' ').toUpperCase().trim(),
                 ranked = endpoints.map(function(endpoint) {
-              var i = endpoint.description.indexOf(" ", 16),
-                  source = endpoint.search_source || [endpoint.path_labeled.replace(/\//g, ' '), endpoint.group, endpoint.description.substring(0,i)].join(' ').toUpperCase().trim(),
-                  score = liquidemetal.score(source, term);
 
-              endpoint.search_source = source;
+                  try {
+                    var i = endpoint.description.indexOf(" ", 16),
+                        source = endpoint.search_source || [endpoint.path_labeled.replace(/\//g, ' '), endpoint.group, endpoint.description.substring(0,i)].join(' ').toUpperCase().trim(),
+                        score = liquidemetal.score(source, term);
+                        endpoint.search_source = source;
+                        return [score, source, endpoint];
+                  } catch (error) {
+                    if (console && console.error) {
+                      console.warn("Failed to score endpoint", endpoint, error.message);
+                    }
+                    return [0, '', endpoint];
+                  }
 
-              return [score, source, endpoint];
             }).filter(function(score){
               return score[0] > 0;
             }).sort(function(a, b) {
@@ -390,7 +397,35 @@ $(function() {
 
           } // onSearch function
         } // PathField options
-      ); // PathField constructor
+      ), // PathField constructor
+      upgraded = false,
+      queue = [],
+      send = function(request) {
+        if (upgraded) {
+          wpcom(request, function(err, response) {
+            if (err) {
+              console.error("Error", err);
+            } else {
+              console.log("Response", response);
+            }
+          });
+        } else {
+          queue.push(request);
+        }
+      };
+
+  wpcom({metaAPI: { accessAllUsersBlogs: true }}, function(err, response) {
+    if (err) {
+      throw err;
+    }
+
+    console.log("Upgraded");
+
+    upgraded = true;
+
+    queue.each(send);
+
+  });
 
   bodyBuilder.disable();
 
@@ -412,14 +447,11 @@ $(function() {
     }
   });
 
-  pathField.on('submit', function(path){
-    console.log('submit', path);
-  });
-
   pathField.on('reset', function(){
     methodSelector.enable();
     queryBuilder.reset();
     bodyBuilder.reset();
+    tip.reset();
   });
 
   pathField.focus();
@@ -459,12 +491,31 @@ $(function() {
   queryBuilder.on('tip', onTip);
   bodyBuilder.on('tip', onTip);
 
-  wpcom('/help', function() {
+  try {
+    endpoints = JSON.parse(localStorage.endpoints);
+  } catch (e) {
+    // no valid endpoints
+  } finally {
+    if (!$.isArray(endpoints)) {
+      delete localStorage.endpoints;
+      endpoints = [];
+    }
+  }
 
-    console.log.apply(console, arguments);
-
+  wpcom('/help', function(error, response) {
+    localStorage.endpoints = JSON.stringify(response);
+    endpoints = response;
   });
 
+  pathField.on('submit', function(path){
+    var method = methodSelector.getValue(),
+        query = queryBuilder.getQuery(),
+        body = bodyBuilder.getQuery(),
+        request = {method:method,path:path,query:query,body:body};
+
+
+    send(request);
+  });
 
 });
 },{"../path":2,"./lookup_pane":7,"./method_selector":8,"./param_builder":9,"./path_field":10,"./tip":11,"liquidmetal":12,"wpcom-proxy-request":13}],7:[function(require,module,exports){
@@ -899,7 +950,7 @@ ParamBuilder.prototype.setupInput = function(field, func) {
 ParamBuilder.prototype.setupFieldInput = function(name, node) {
 
   var format = function(builder) {
-        var value = node.html().replace(/<br><br>$/, '\n').replace(/<br>/g, '\n');
+        var value = node.html().replace(/<br><br>$/, '\n').replace(/<br>/g, '\n').trim();
         builder.setParam(name, value);
       },
       tip = $.extend({name:name, context:node}, this.value[name]);
@@ -908,15 +959,27 @@ ParamBuilder.prototype.setupFieldInput = function(name, node) {
 
 ParamBuilder.prototype.setParam = function(name, value) {
 
+
   if (value === "") {
     delete this.params[name];
   } else {
     this.params[name] = value;
   }
 
-  this.raw.text(querystring.stringify(this.params));
   this.emit('change');
 
+};
+
+ParamBuilder.prototype.getParams = function() {
+  var params = {};
+
+  for(var param in this.value) {
+    if (this.params[param] && this.params[param] !== "") {
+      params[param] = this.params[param];
+    }
+  }
+
+  return params;
 };
 
 ParamBuilder.prototype.getParam = function(name) {
@@ -1008,6 +1071,16 @@ ParamBuilder.prototype.updateScroller = function() {
     this.section.addClass('at-bottom');
   }
   
+};
+
+ParamBuilder.prototype.getQuery = function() {
+
+  if (!this.value || this.value === '') {
+    return this.raw.text();
+  }
+
+  return this.getParams();
+
 };
 
 module.exports = ParamBuilder;
@@ -1311,6 +1384,8 @@ var Tip = Component.extend({
     }
 
     if (!value) {
+      this.cancel();
+      this.hide();
       return;
     }
 
