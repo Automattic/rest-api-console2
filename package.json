@@ -1,17 +1,28 @@
 {
   "name": "console2",
   "version": "0.0.0",
-  "description": "A better REST console.",
+  "description": "A better REST console for WordPress.com.",
+  "homepage": "https://github.com/beaucollins/wpcom-console2",
   "main": "lib/index.js",
   "scripts": {
+    "server" : "server",
     "test": "mocha"
   },
-  "author": "",
-  "license": "ISC",
-  "devDependencies" : {
-    "mocha" : "*"
+  "author": {
+    "name": "Beau Collins",
+    "email": "beaucollins@gmail.com"
   },
-  "dependencies" : {
-    "liquidmetal" : "rmm5t/liquidmetal"
+  "license": "MIT",
+  "devDependencies": {
+    "mocha" : "*",
+    "express" : "*"
+  },
+  "dependencies": {
+    "liquidmetal": "rmm5t/liquidmetal",
+    "wpcom-proxy-request": "Automattic/wpcom-proxy-request"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beaucollins/wpcom-console2.git"
   }
 }
