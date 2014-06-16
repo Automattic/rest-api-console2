@@ -17,9 +17,9 @@ div#path {
   -webkit-flex-direction: row;
   flex-wrap: nowrap;
   -webkit-flex-wrap: nowrap;
-  justify-content: center;
-  -webkit-justify-content: center;
-  align-items: middle;
+  justify-content: flex-start;
+  -webkit-justify-content: flex-start;
+  align-items: stretch;
   -webkit-align-items: stretch;
 }
 
@@ -30,6 +30,8 @@ div#path > div {
 }
 
 div#parts > div {
+  flex-shrink: 0;
+  -webkit-flex-shrink: 0;
   font-family: "bitstream_vera_sans_monoroman";
   padding: 3px 1px 0 1px;
   line-height: 20px;
@@ -97,6 +99,8 @@ div#path > div#submit:active {
 div#path > div#parts {
   flex-grow: 1;
   -webkit-flex-grow: 1;
+  flex-shrink: 0;
+  -webkit-flex-shrink: 0;
   display: flex;
   display: -webkit-flex;
   flex-direction: row;
@@ -115,6 +119,7 @@ div#path > div#parts {
 }
 
 div#parts > div.param {
+  flex-shrink: 0;
   -webkit-flex-shrink: 0;
   color: hsl(202,68%,44%);
   white-space: nowrap;
@@ -452,3 +457,76 @@ section#parameters th {
 section#parameters div:focus {
   outline: none;
 }
+
+#tip {
+  position: absolute;
+  top: 120px;
+  left: 500px;
+  background: hsl(0,0%,10%);
+  max-width: 300px;
+  color: hsl(0,0%,80%);
+  font-size: 12px;
+  opacity: 0.9;
+  line-height: 1.4;
+  word-break: break-all;
+  word-break: break-word;
+  z-index: 1;
+  transition: opacity 100ms;
+  -moz-transition: opacity 100ms;
+  -webit-transition: opacity 100ms;
+}
+
+#tip .anchor {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: hsl(0,0%,10%);
+  transform: translate(-5px,-5px) rotate(45deg);
+  -moz-transform: translate(-5px,-5px) rotate(45deg);
+  -webkit-transform: translate(-5px,-5px) rotate(45deg);
+  z-index: 0;
+}
+
+#tip header {
+  position: relative;
+  padding: 8px;
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: row;
+  -webkit-flex-direction: row;
+  flex-wrap: nowrap;
+  -webkit-flex-wrap: nowrap;
+  justify-content: center;
+  -webkit-justify-content: center;
+  align-items: baseline;
+  -webkit-align-items: baseline;
+  z-index: 1;
+}
+
+#tip header code {
+  color: hsl(0,0%,100%);
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+  margin-right: 10px;
+}
+
+#tip ul {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  z-index: 1;
+}
+
+#tip li {
+  padding: 8px;
+  border-top: 1px solid hsla(0,0%,100%,0.1);
+}
+
+#tip ul code {
+  color: hsl(195,75%,60%);
+}
+

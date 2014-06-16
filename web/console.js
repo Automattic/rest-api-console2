@@ -230,7 +230,7 @@ PartBuilder.prototype.build = function build(part, params) {
 
 function paramType(part, params) {
   if (part.indexOf('$') === 0) {
-    return new Part(part, {type:'param', label:part, editable:true, encode:function(v) {
+    return new Part(part, {type:'param', label:part, editable:true, meta:params[part], encode:function(v) {
       return encodeURIComponent(v);
     }});
   }
@@ -323,12 +323,13 @@ Component.extend = function(defaultOptions) {
 
 module.exports = Component;
 
-},{"events":12,"util":19}],6:[function(require,module,exports){
+},{"events":13,"util":20}],6:[function(require,module,exports){
 var path = require('../path'),
     PathField = require('./path_field'),
     LookupPane = require('./lookup_pane'),
     MethodSelector = require('./method_selector'),
     ParamBuilder = require('./param_builder'),
+    Tip = require('./tip'),
     liquidemetal = require('liquidmetal');
 
 if (!window) throw new Error("Not a browser window.");
@@ -339,6 +340,7 @@ $(function() {
       methodSelector = new MethodSelector($('#method'), {'container':$('#methods'),'label':$('#method span')}),
       queryBuilder = new ParamBuilder($('#query'), {'title':'Query'}),
       bodyBuilder = new ParamBuilder($('#body'), {'title':'Body'}),
+      tip = new Tip('#tip');
       pathField = new PathField($('#path'), {
         'defaultValue':new path.DefaultPath(),
         'itemTemplate': function(item) {
@@ -450,8 +452,16 @@ $(function() {
     bodyBuilder.node.removeClass('disabled');
   });
 
+  var onTip = tip.setValue.bind(tip);
+
+  pathField.on('tip', onTip);
+  queryBuilder.on('tip', onTip);
+  bodyBuilder.on('tip', onTip);
+
+
+
 });
-},{"../path":2,"./lookup_pane":7,"./method_selector":8,"./param_builder":9,"./path_field":10,"liquidmetal":11}],7:[function(require,module,exports){
+},{"../path":2,"./lookup_pane":7,"./method_selector":8,"./param_builder":9,"./path_field":10,"./tip":11,"liquidmetal":12}],7:[function(require,module,exports){
 var Component = require('./component');
 
 LookupPane = Component.extend({
@@ -801,7 +811,6 @@ var ParamBuilder = Component.extend({
     this.node.append($("<header></header>").text(this.options.title));
 
     this.focusListener = this.onFocus.bind(this);
-    this.blurListener = this.onBlur.bind(this);
     this.changeListener = this.onChange.bind(this);
     this.inputListener = this.onInput.bind(this);
     this.pasteListener = this.onPaste.bind(this);
@@ -874,8 +883,6 @@ ParamBuilder.prototype.setupInput = function(field, func) {
   field
     .attr("contenteditable",true)
     .attr("tabindex","1")
-    .on('focus', this.focusListener)
-    .on('blur', this.blurListener)
     .on('keydown', this.inputListener)
     .on('keyup', fn.arglock(this.changeListener, func))
     .on('paste', this.pasteListener);
@@ -886,11 +893,11 @@ ParamBuilder.prototype.setupInput = function(field, func) {
 ParamBuilder.prototype.setupFieldInput = function(name, node) {
 
   var format = function(builder) {
-    var value = node.html().replace(/<br><br>$/, '\n').replace(/<br>/g, '\n');
-    builder.setParam(name, value);
-  };
-
-  return this.setupInput(node, format);
+        var value = node.html().replace(/<br><br>$/, '\n').replace(/<br>/g, '\n');
+        builder.setParam(name, value);
+      },
+      tip = $.extend({name: name, context:node}, this.value[name]);
+  return this.setupInput(node, format).on('focus', fn.arglock(this.focusListener, tip));
 };
 
 ParamBuilder.prototype.setParam = function(name, value) {
@@ -937,10 +944,8 @@ ParamBuilder.prototype.disable = function() {
 
 };
 
-ParamBuilder.prototype.onFocus = function() {
-};
-
-ParamBuilder.prototype.onBlur = function() {
+ParamBuilder.prototype.onFocus = function(tip) {
+  this.emit('tip', tip);
 };
 
 ParamBuilder.prototype.onChange = function(fn, e) {
@@ -1000,7 +1005,7 @@ ParamBuilder.prototype.updateScroller = function() {
 };
 
 module.exports = ParamBuilder;
-},{"../fn":1,"./component":5,"querystring":17}],10:[function(require,module,exports){
+},{"../fn":1,"./component":5,"querystring":18}],10:[function(require,module,exports){
 var Component = require('./component'),
     LookupPane = require('./lookup_pane'),
     fn = require('../fn'),
@@ -1251,6 +1256,11 @@ function buildNode(part) {
       })
       .on('focus', function() {
         var value = field.getParam(part.name);
+
+        if (part.options.meta) {
+          field.emit('tip', $.extend({name:part.name,context:node,position:'below'}, part.options.meta));
+        }
+
         if (value !== '') {
           node.addClass('modified');
         }
@@ -1268,7 +1278,110 @@ function buildNode(part) {
 
 module.exports = PathField;
 
-},{"../fn":1,"./component":5,"./lookup_pane":7,"util":19}],11:[function(require,module,exports){
+},{"../fn":1,"./component":5,"./lookup_pane":7,"util":20}],11:[function(require,module,exports){
+var Component = require('./component'),
+    fn = require('../fn');
+
+var Tip = Component.extend({
+  'init' : function() {
+    this.header = this.node.find('header');
+    this.name = this.header.find('code');
+    this.type = this.header.find('em');
+    this.anchor = this.node.find('.anchor');
+    this.cancel = function() {};
+
+    this.positionDelayed = fn.rateLimit(200, this.positionTip.bind(this));
+
+    this.hide();
+  },
+  'onChange' : function(value, oldValue) {
+    this.name.text(value.name);
+    this.type.text(value.type);
+
+    this.displayDescription(value.description);
+
+    if (value.context) {
+      this.cancel();
+      this.cancel = this.positionDelayed(value.context, value.position);
+    }
+  }
+});
+
+Tip.prototype.positionTip = function(context, position) {
+
+  var offset = context.offset(),
+      positionCss = {},
+      anchorCss = {};
+
+  this.node.css({'opacity':'0', 'visibility': 'hidden'}).show();
+
+  if (position === 'below') {
+    positionCss = {top: offset.top + offset.height + 8, left: offset.left};
+    anchorCss = { top: 0, left: 16};
+  } else {
+    positionCss = {top: offset.top, left: offset.width + offset.left + 8};
+    anchorCss = { top: 16, left: 0};
+  }
+
+  positionCss.visibility = 'visible';
+  positionCss.opacity = 0.9;
+
+  this.anchor.css(anchorCss);
+  this.node.css(positionCss);
+
+  context.one('blur', this.hide.bind(this));
+
+};
+
+Tip.prototype.displayDescription = function(description) {
+  var list = this.node.find('ul'),
+      items = $();
+
+  list.find('li').remove();
+
+  if (!$.isPlainObject(description)) {
+    this.formatDescription(description).appendTo(list);
+    return;
+  }
+  
+  for (var name in description) {
+    items = items.add(this.formatDescription(name, description[name]));
+  }
+
+  list.append(items);
+
+};
+
+Tip.prototype.formatDescription = function(name, description) {
+
+  var item = $('<li></li>'), def = '(default)';
+
+  if (!description) {
+    description = name;
+  } else {
+    item.append($('<code></code>').text(name)).append(' – ');
+  }
+
+  if (!description) {
+    return item;
+  }
+
+  if (description.indexOf(def) === 0) {
+    item.append($('<em></em>').text('default')).append(' ');
+    description = description.slice(def.length);
+  }
+
+  return item.append($('<span></span>').text(description));
+
+};
+
+Tip.prototype.hide = function() {
+  this.cancel();
+  this.node.hide();
+};
+
+module.exports = Tip;
+},{"../fn":1,"./component":5}],12:[function(require,module,exports){
 /**
  * LiquidMetal, version: 1.2.1 (2012-04-21)
  *
@@ -1405,7 +1518,7 @@ module.exports = PathField;
   }
 })(typeof window !== 'undefined' ? window : this);
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1710,7 +1823,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -1735,7 +1848,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1800,7 +1913,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1886,7 +1999,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1973,20 +2086,20 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":15,"./encode":16}],18:[function(require,module,exports){
+},{"./decode":16,"./encode":17}],19:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2576,4 +2689,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require("K/m7xv"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":18,"K/m7xv":14,"inherits":13}]},{},[6])
+},{"./support/isBuffer":19,"K/m7xv":15,"inherits":14}]},{},[6])
