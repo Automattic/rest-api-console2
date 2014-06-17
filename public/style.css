@@ -1,7 +1,8 @@
 body {
   margin:0;
   font-family: "open_sans";
-  margin-top: 80px;
+  font-size: 14px;
+  line-height: 1;
 }
 
 pre, code {
@@ -10,11 +11,10 @@ pre, code {
 
 div#path {
   background: hsl(202,68%,44%);
-  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 48px;
+  height: 44px;
   padding: 16px;
   font-size: 18px;
   display: flex;
@@ -23,8 +23,8 @@ div#path {
   -webkit-flex-direction: row;
   flex-wrap: nowrap;
   -webkit-flex-wrap: nowrap;
-  justify-content: flex-start;
-  -webkit-justify-content: flex-start;
+  justify-content: stretch;
+  -webkit-justify-content: stretch;
   align-items: stretch;
   -webkit-align-items: stretch;
   z-index: 2;
@@ -37,11 +37,12 @@ div#path > div {
 }
 
 div#parts > div {
+  font-size: 14px;
   flex-shrink: 0;
   -webkit-flex-shrink: 0;
   font-family: "bitstream_vera_sans_monoroman";
-  padding: 3px 1px 0 1px;
-  line-height: 20px;
+  padding: 1px 1px 0 1px;
+  line-height: 16px;
   flex-grow: 0;
   -webkit-flex-grow: 0;
   color: hsl(202,20%,44%);
@@ -116,13 +117,17 @@ div#path > div#parts {
   -webkit-flex-wrap: nowrap;
   justify-content: center;
   -webkit-justify-content: center;
-  align-items: middle;
-  -webkit-align-items: stretch;
+  align-items: center;
+  -webkit-align-items: center;
   padding: 0;
   position: relative;
   overflow: visible;
   background: hsl(205,38%,100%);
   padding: 8px;
+}
+
+div#path.endpoint > div#parts {
+  background: hsl(205,38%,94%);
 }
 
 div#parts > div.param {
@@ -133,7 +138,7 @@ div#parts > div.param {
   overflow: hidden;
   text-overflow: ellipsis "";
   position: relative;
-  background: hsl(205,38%,94%);
+  background: hsl(205,38%,100%);
   padding-left: 6px;
   padding-right: 6px;
   border-radius: 2px;
@@ -167,16 +172,22 @@ div#parts > div:nth-last-child(3):first-child:focus {
 div#parts > div#search {
   text-align: right;
   cursor: pointer;
-  background: hsl(205,38%,100%);
+  background: none;
 }
 
 div#parts > div:first-child {
   margin-left: 0;
 }
 
-div#parts > div:nth-last-child(3) {
+.endpoint div#parts > div#search {
   flex-grow: 1;
   -webkit-flex-grow: 1;
+}
+
+#search {
+  padding: 0;
+  width: 24px;
+  height: 24px;
 }
 
 #search a {
@@ -189,22 +200,26 @@ div#parts > div:nth-last-child(3) {
   height: 24px;
   opacity: 1;
   overflow: hidden;
-  background: url(res/search-dark-@2x.png) no-repeat center center hsl(201,60%,100%);
+  background: url(res/search-dark-@2x.png) no-repeat center center transparent; /*hsl(201,60%,100%);*/
   background-size: 16px 16px;
 }
 
-#search a:hover {
-  background-color: hsl(205,38%,90%);
-  background-image: url(res/search-dark-@2x.png);
+.endpoint #search a {
+  background-image: url(res/close-dark-@2x.png);;
 }
 
-.endpoint #search a {
-  background-image: url(res/close-dark-@2x.png);
+#search a:hover {
+  background-color: hsl(201,60%,60%);
+  background-image: url(res/search-@2x.png);
+}
+
+.endpoint #search a:hover {
+  background-image: url(res/close-@2x.png);
 }
 
 #search a:active {
-  background-color: hsl(201,60%,60%);
-  background-image: url(res/search-@2x.png);
+  background-color: hsl(205,38%,90%);
+  background-image: url(res/search-dark-@2x.png);
 }
 
 .endpoint #search a:active {
@@ -386,6 +401,7 @@ section#parameters table {
 }
 
 section#parameters div.scroller {
+  position: relative;
   max-height: 222px;
   overflow-y: scroll;
 }
@@ -559,6 +575,7 @@ section#parameters div:focus {
   -webkit-justify-content: flex-start;
   align-items: baseline;
   -webkit-align-items: baseline;
+  line-height: 1.5;
 }
 
 #requests header > code:first-child {
@@ -591,6 +608,7 @@ section#parameters div:focus {
   white-space: nowrap;
   flex-shrink: 0;
   -webkit-flex-shrink: 0;
+  font-size: 12px;
 }
 
 #requests header > span::before {
@@ -598,21 +616,34 @@ section#parameters div:focus {
   font-family: Genericons;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 18px;
-  line-height: 1;
+  font-size: 16px;
+  line-height: 14px;
   display: inline-block;
-  vertical-align: -4px;
+  vertical-align: -3px;
   margin-right: 2px;
 }
 
+#requests .error header > span {
+  color: hsl(0,100%,50%);
+}
+
+#requests .error header > span::before {
+  content: '\f414';
+  margin-right: 8px;
+}
+
 #requests .loading header > span {
-  width: 18px;
-  height: 18px;
+  position: relative;
+  top: 2px;
+  width: 14px;
+  height: 14px;
   border: 0 solid hsl(202,60%,44%);
   border-radius: 100%;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
   -webkit-animation: throbber ease-out 0.7s infinite;
+  -moz-animation: throbber ease-out 0.7s infinite;
+  animation: throbber ease-out 0.7s infinite;
 }
 
 #requests .loading header > span::before {
@@ -620,22 +651,22 @@ section#parameters div:focus {
 }
 
 @-webkit-keyframes throbber {
-  0%   { opacity: 0; -webkit-transform: scale(0,0); border-width: 9px; }
-  50%  { opacity: 1; border-width: 9px;}
-  100% { opacity: 0; -webkit-transform: scale(1,1); border-width: 0px; }
+  0%   { opacity: 0; -webkit-transform: scale(0,0); border-width: 7px; }
+  50%  { opacity: 1; border-width: 7px;}
+  100% { opacity: 0; -webkit-transform: scale(1.1,1.1); border-width: 0px; }
 }
 @-moz-keyframes throbber {
-  0%   { opacity: 0; -moz-transform: scale(0,0); }
-  50%  { opacity: 1; }
-  100% { opacity: 0; -moz-transform: scale(1,1); }
+  0%   { opacity: 0; -moz-transform: scale(0,0); border-width: 7px; }
+  50%  { opacity: 1; border-width: 7px;}
+  100% { opacity: 0; -moz-transform: scale(1,1); border-width: 0px; }
 }
 @-o-keyframes throbber {
-  0%   { opacity: 0; -o-transform: scale(0,0); }
-  50%  { opacity: 1; }
-  100% { opacity: 0; -o-transform: scale(1,1); }
+  0%   { opacity: 0; -o-transform: scale(0,0); border-width: 7px; }
+  50%  { opacity: 1; border-width: 7px;}
+  100% { opacity: 0; -o-transform: scale(1,1); border-width: 0px; }
 }
 @keyframes throbber {
-  0%   { opacity: 0; transform: scale(0,0); }
-  50%  { opacity: 1; }
-  100% { opacity: 0; transform: scale(1,1); }
+  0%   { opacity: 0; transform: scale(0,0); border-width: 7px; }
+  50%  { opacity: 1; border-width: 7px;}
+  100% { opacity: 0; transform: scale(1,1); border-width: 0px; }
 }

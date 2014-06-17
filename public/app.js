@@ -893,9 +893,13 @@ var ParamBuilder = Component.extend({
     this.node.append($("<header></header>").text(this.options.title));
 
     this.focusListener = this.onFocus.bind(this);
+    this.blurListener = this.onBlur.bind(this);
     this.changeListener = this.onChange.bind(this);
     this.inputListener = this.onInput.bind(this);
     this.pasteListener = this.onPaste.bind(this);
+
+    this.scrollCancel = function(){};
+    this.scrollCalculator = fn.rateLimit(100, this.scrollIntoView.bind(this));
 
     this.section = $('<div></div>').addClass('container').appendTo(this.node);
 
@@ -979,7 +983,9 @@ ParamBuilder.prototype.setupFieldInput = function(name, node) {
         builder.setParam(name, value);
       },
       tip = $.extend({name:name, context:node}, this.value[name]);
-  return this.setupInput(node, format).on('focus', fn.arglock(this.focusListener, tip));
+  return this.setupInput(node, format)
+          .on('focus', fn.arglock(this.focusListener, node, tip))
+          .on('blur', fn.arglock(this.blurListener, node));
 };
 
 ParamBuilder.prototype.setParam = function(name, value) {
@@ -1038,8 +1044,13 @@ ParamBuilder.prototype.disable = function() {
 
 };
 
-ParamBuilder.prototype.onFocus = function(tip) {
+ParamBuilder.prototype.onFocus = function(editableNode, tip, e) {
+  this.focusedTip = tip;
   this.emit('tip', tip);
+};
+
+ParamBuilder.prototype.onBlur = function(editableNode, e) {
+  this.focusedTip = null;
 };
 
 ParamBuilder.prototype.onChange = function(fn, e) {
@@ -1070,11 +1081,37 @@ ParamBuilder.prototype.onPaste = function(e) {
 
 ParamBuilder.prototype.onScroll = function(e) {
 
-  var node = e.currentTarget,
-      scroller = $(node);
+  if (this.focusedTip) {
+    this.emit('tip', null);
+  }
 
   this.updateScroller();
 
+  this.scrollCancel();
+  this.scrollCancel = this.scrollCalculator();
+
+};
+
+ParamBuilder.prototype.scrollIntoView = function() {
+
+  var node = this.scroller.get(0),
+      scrollBounds = {
+        top: node.scrollTop,
+        bottom: node.clientHeight + node.scrollTop,
+        height: node.clientHeight
+      };
+
+  if (this.focusedTip) {
+    var position = this.focusedTip.context.position();
+
+    position.bottom = position.top + this.focusedTip.context.height();
+
+    if (position.bottom > 0 && position.top < scrollBounds.height) {
+      this.emit('tip', this.focusedTip);
+    }
+
+  }
+  
 };
 
 ParamBuilder.prototype.updateScroller = function() {
@@ -1095,7 +1132,7 @@ ParamBuilder.prototype.updateScroller = function() {
   } else if (!this.section.hasClass('at-bottom') && atBottom) {
     this.section.addClass('at-bottom');
   }
-  
+
 };
 
 ParamBuilder.prototype.getQuery = function() {
@@ -1395,12 +1432,14 @@ var Component = require('./component'),
 var RequestViewer = Component.extend({
   'container' : '#requests',
   'loadingClass' : 'loading',
+  'errorClass' : 'error',
   'init' : function() {
 
     this.container = $(this.options.container);
     this.node.append($("<header><code></code><code></code><span></span></header>"));
 
-    var codes = this.node.find('header > code');
+    this.header = this.node.find('header');
+    var codes = this.header.find('code');
 
     this.method = codes.eq(0);
     this.path = codes.eq(1);
@@ -1439,15 +1478,18 @@ RequestViewer.prototype.onResponse = function(err, response) {
   this.node.removeClass(this.options.loadingClass);
 
   this.end_time = ts();
-  if (err) {
-    console.error("Error", err);
-  } else {
-    console.log("Response", response);
-  }
-
   this.ellapsed = this.end_time - this.start_time;
 
-  this.status.text(this.ellapsed + 'ms');
+  if (err) {
+    console.error("Error", err);
+    this.node.addClass(this.options.errorClass);
+    this.status.text(err.statusCode >= 400 ? err.statusCode : 404);
+  } else {
+    console.log("Response", response);
+    this.status.text(this.ellapsed + 'ms');
+  }
+
+
 
 };
 
@@ -1468,9 +1510,13 @@ var Tip = Component.extend({
     this.type = this.header.find('em');
     this.anchor = this.node.find('.anchor');
     this.cancel = function() {};
-    this.contextBlurListener = this.hide.bind(this);
-
+    this.cancelResize = function() {};
+    this.contextBlurListener = this.onBlur.bind(this);
+    this.resizeListener = this.onResize.bind(this);
     this.positionDelayed = fn.rateLimit(200, this.positionTip.bind(this));
+    this.redisplay = fn.rateLimit(100, this.redisplayTip.bind(this));
+
+    $(window).on('resize', this.resizeListener);
 
     this.hide();
   },
@@ -1493,12 +1539,31 @@ var Tip = Component.extend({
     this.displayDescription(value.description);
 
     if (value.context) {
+
       this.currentContext = value.context;
       this.cancel();
       this.cancel = this.positionDelayed(value.context, value.position);
+
+      value.context.one('blur', this.contextBlurListener);
     }
   }
 });
+
+Tip.prototype.redisplayTip = function() {
+
+  if (!this.value) {
+    return;
+  }
+
+  // detect if the item is offscreen or not
+  var contextNode = this.value.context || null;
+
+  if (!contextNode) {
+    return;
+  }
+
+  this.options.onChange.call(this, this.value);
+};
 
 Tip.prototype.positionTip = function(context, position, attempts) {
 
@@ -1605,8 +1670,6 @@ Tip.prototype.positionTip = function(context, position, attempts) {
 
   this.node.css({'visibility':'visible', 'opacity':this.options.opacity});
 
-  context.one('blur', this.contextBlurListener);
-
 };
 
 Tip.prototype.displayDescription = function(description) {
@@ -1626,6 +1689,20 @@ Tip.prototype.displayDescription = function(description) {
 
   list.append(items);
 
+};
+
+Tip.prototype.onResize = function() {
+
+  this.cancel();
+  this.node.hide();
+
+  this.cancelResize();
+  this.cancelResize = this.redisplay();
+
+};
+
+Tip.prototype.onBlur = function() {
+  this.hide();
 };
 
 Tip.prototype.formatDescription = function(name, description) {
