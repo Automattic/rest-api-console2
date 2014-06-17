@@ -264,7 +264,8 @@ var events = require('events'),
       'beforeChange' : function() { return arguments[0]; },
       'afterChange'  : noop,
       'onChange'     : noop,
-      'onReset'      : noop
+      'onReset'      : noop,
+      'element'      : 'div'
     };
 
 function Component(node, options) {
@@ -310,8 +311,16 @@ Component.prototype.reset = function() {
 
 Component.extend = function(defaultOptions) {
   var ctr = function(node, options) {
+    if ($.isPlainObject(node)) {
+      options = node;
+      node = null;
+    }
     var opts = {};
     $.extend(opts, componentOptions, defaultOptions, options);
+
+    if (!node) {
+      node = $('<' + opts.element + '></' + opts.element + '>');
+    }
 
     Component.call(this, node, opts);
   };
@@ -323,15 +332,17 @@ Component.extend = function(defaultOptions) {
 
 module.exports = Component;
 
-},{"events":22,"util":29}],6:[function(require,module,exports){
+},{"events":23,"util":30}],6:[function(require,module,exports){
 var path = require('../path'),
     PathField = require('./path_field'),
     LookupPane = require('./lookup_pane'),
     MethodSelector = require('./method_selector'),
     ParamBuilder = require('./param_builder'),
+    RequestViewer = require('./request_viewer'),
     Tip = require('./tip'),
     liquidemetal = require('liquidmetal'),
-    wpcom = require('wpcom-proxy-request');
+    wpcom = require('wpcom-proxy-request'),
+    querystring = require('querystring');
 
 if (!window) throw new Error("Not a browser window.");
 
@@ -402,13 +413,8 @@ $(function() {
       queue = [],
       send = function(request) {
         if (upgraded) {
-          wpcom(request, function(err, response) {
-            if (err) {
-              console.error("Error", err);
-            } else {
-              console.log("Response", response);
-            }
-          });
+          wpcom(request.getValue(), request.onResponse);
+          request.sent();
         } else {
           queue.push(request);
         }
@@ -418,8 +424,6 @@ $(function() {
     if (err) {
       throw err;
     }
-
-    console.log("Upgraded");
 
     upgraded = true;
 
@@ -511,14 +515,35 @@ $(function() {
     var method = methodSelector.getValue(),
         query = queryBuilder.getQuery(),
         body = bodyBuilder.getQuery(),
-        request = {method:method,path:path,query:query,body:body};
+        request = {method:method,path:path,query:query,body:body},
+        viewer = new RequestViewer({
+          'container' : '#requests'
+        });
 
+    var queryIndex = path.indexOf('?');
+    if (queryIndex !== -1) {
+      try {
+        request.query = $.extend(query, querystring.parse(path.slice(queryIndex + 1)));
+      } catch(e) {
+        // could not parse the query from the path, drop it
+        console.log("Couldn't parse it");
+      }
+      request.path = request.path.slice(0, queryIndex);
+      console.log("Updated the query", queryIndex, request.path, request);
+    }
 
-    send(request);
+    if (request.path.indexOf('/') !== 0) {
+      request.path = "/" + request.path;
+    }
+
+    viewer.setValue(request);
+
+    send(viewer);
+
   });
 
 });
-},{"../path":2,"./lookup_pane":7,"./method_selector":8,"./param_builder":9,"./path_field":10,"./tip":11,"liquidmetal":12,"wpcom-proxy-request":13}],7:[function(require,module,exports){
+},{"../path":2,"./lookup_pane":7,"./method_selector":8,"./param_builder":9,"./path_field":10,"./request_viewer":11,"./tip":12,"liquidmetal":13,"querystring":28,"wpcom-proxy-request":14}],7:[function(require,module,exports){
 var Component = require('./component');
 
 LookupPane = Component.extend({
@@ -1076,7 +1101,11 @@ ParamBuilder.prototype.updateScroller = function() {
 ParamBuilder.prototype.getQuery = function() {
 
   if (!this.value || this.value === '') {
-    return this.raw.text();
+    try {
+      return querystring.parse(this.raw.text());
+    } catch (e) {
+      return {};
+    }
   }
 
   return this.getParams();
@@ -1084,7 +1113,7 @@ ParamBuilder.prototype.getQuery = function() {
 };
 
 module.exports = ParamBuilder;
-},{"../fn":1,"./component":5,"querystring":27}],10:[function(require,module,exports){
+},{"../fn":1,"./component":5,"querystring":28}],10:[function(require,module,exports){
 var Component = require('./component'),
     LookupPane = require('./lookup_pane'),
     fn = require('../fn'),
@@ -1359,7 +1388,75 @@ function buildNode(part) {
 
 module.exports = PathField;
 
-},{"../fn":1,"./component":5,"./lookup_pane":7,"util":29}],11:[function(require,module,exports){
+},{"../fn":1,"./component":5,"./lookup_pane":7,"util":30}],11:[function(require,module,exports){
+var Component = require('./component'),
+    querystring = require('querystring');
+
+var RequestViewer = Component.extend({
+  'container' : '#requests',
+  'loadingClass' : 'loading',
+  'init' : function() {
+
+    this.container = $(this.options.container);
+    this.node.append($("<header><code></code><code></code><span></span></header>"));
+
+    var codes = this.node.find('header > code');
+
+    this.method = codes.eq(0);
+    this.path = codes.eq(1);
+    this.query = codes.eq(2);
+
+    this.status = this.node.find('header > span');
+    this.node.prependTo(this.container);
+
+    this.onResponse = this.onResponse.bind(this);
+
+  },
+  'onChange' : function(request) {
+
+    this.method.text(request.method);
+    this.path.text(request.path);
+
+    var query = querystring.stringify(request.query);
+
+    if (query !== '') {
+      this.path.append($('<em></em>').text("?" + query));
+    }
+
+  }
+});
+
+RequestViewer.prototype.sent = function() {
+
+  this.start_time = ts();
+
+  this.node.addClass(this.options.loadingClass);
+
+};
+
+RequestViewer.prototype.onResponse = function(err, response) {
+
+  this.node.removeClass(this.options.loadingClass);
+
+  this.end_time = ts();
+  if (err) {
+    console.error("Error", err);
+  } else {
+    console.log("Response", response);
+  }
+
+  this.ellapsed = this.end_time - this.start_time;
+
+  this.status.text(this.ellapsed + 'ms');
+
+};
+
+function ts() {
+  return (new Date()).getTime();
+}
+
+module.exports = RequestViewer;
+},{"./component":5,"querystring":28}],12:[function(require,module,exports){
 var Component = require('./component'),
     fn = require('../fn');
 
@@ -1569,7 +1666,7 @@ Tip.prototype.hide = function() {
 };
 
 module.exports = Tip;
-},{"../fn":1,"./component":5}],12:[function(require,module,exports){
+},{"../fn":1,"./component":5}],13:[function(require,module,exports){
 /**
  * LiquidMetal, version: 1.2.1 (2012-04-21)
  *
@@ -1706,7 +1803,7 @@ module.exports = Tip;
   }
 })(typeof window !== 'undefined' ? window : this);
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -1934,7 +2031,7 @@ function toTitle (str) {
   });
 }
 
-},{"component-event":14,"debug":15,"promise":19,"uid":21}],14:[function(require,module,exports){
+},{"component-event":15,"debug":16,"promise":20,"uid":22}],15:[function(require,module,exports){
 var bind = window.addEventListener ? 'addEventListener' : 'attachEvent',
     unbind = window.removeEventListener ? 'removeEventListener' : 'detachEvent',
     prefix = bind !== 'addEventListener' ? 'on' : '';
@@ -1970,7 +2067,7 @@ exports.unbind = function(el, type, fn, capture){
   el[unbind](prefix + type, fn, capture || false);
   return fn;
 };
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -2116,7 +2213,7 @@ function load() {
 
 exports.enable(load());
 
-},{"./debug":16}],16:[function(require,module,exports){
+},{"./debug":17}],17:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -2315,7 +2412,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":17}],17:[function(require,module,exports){
+},{"ms":18}],18:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -2428,7 +2525,7 @@ function plural(ms, n, name) {
   return Math.ceil(ms / n) + ' ' + name + 's';
 }
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 'use strict';
 
 var asap = require('asap')
@@ -2535,7 +2632,7 @@ function doResolve(fn, onFulfilled, onRejected) {
   }
 }
 
-},{"asap":20}],19:[function(require,module,exports){
+},{"asap":21}],20:[function(require,module,exports){
 'use strict';
 
 //This file contains then/promise specific extensions to the core promise API
@@ -2709,7 +2806,7 @@ Promise.race = function (values) {
   });
 }
 
-},{"./core.js":18,"asap":20}],20:[function(require,module,exports){
+},{"./core.js":19,"asap":21}],21:[function(require,module,exports){
 (function (process){
 
 // Use the fastest possible means to execute a task in a future turn
@@ -2826,7 +2923,7 @@ module.exports = asap;
 
 
 }).call(this,require("K/m7xv"))
-},{"K/m7xv":24}],21:[function(require,module,exports){
+},{"K/m7xv":25}],22:[function(require,module,exports){
 /**
  * Export `uid`
  */
@@ -2845,7 +2942,7 @@ function uid(len) {
   return Math.random().toString(35).substr(2, len);
 }
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3150,7 +3247,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -3175,7 +3272,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -3240,7 +3337,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3326,7 +3423,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3413,20 +3510,20 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":25,"./encode":26}],28:[function(require,module,exports){
+},{"./decode":26,"./encode":27}],29:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -4016,4 +4113,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require("K/m7xv"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":28,"K/m7xv":24,"inherits":23}]},{},[6])
+},{"./support/isBuffer":29,"K/m7xv":25,"inherits":24}]},{},[6])
