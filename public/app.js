@@ -332,7 +332,7 @@ Component.extend = function(defaultOptions) {
 
 module.exports = Component;
 
-},{"events":23,"util":30}],6:[function(require,module,exports){
+},{"events":14,"util":21}],6:[function(require,module,exports){
 var path = require('../path'),
     PathField = require('./path_field'),
     LookupPane = require('./lookup_pane'),
@@ -341,7 +341,6 @@ var path = require('../path'),
     RequestViewer = require('./request_viewer'),
     Tip = require('./tip'),
     liquidemetal = require('liquidmetal'),
-    wpcom = require('wpcom-proxy-request'),
     querystring = require('querystring');
 
 if (!window) throw new Error("Not a browser window.");
@@ -412,24 +411,37 @@ $(function() {
       upgraded = false,
       queue = [],
       send = function(request) {
-        if (upgraded) {
-          wpcom(request.getValue(), request.onResponse);
-          request.sent();
-        } else {
-          queue.push(request);
-        }
+        var opts = request.getValue();
+        
+        $.ajax({
+          method: opts.method,
+          url: 'https://public-api.wordpress.com/rest/v1' + [opts.path, $.param(opts.query)].join('?'),
+          headers: {'accept':'application/json'},
+          success: function(response) {
+            request.onResponse(null, response);
+          },
+          error: function(xhr, errorType, error) {
+
+            var body = xhr.response;
+
+            try {
+              body = JSON.parse(body);
+            } catch (e) {
+              // not valid json
+            }
+
+            request.onResponse({
+              status: xhr.status,
+              error: error,
+              errorType: errorType,
+              body: body
+            }, null);
+          }
+        });
+
+        request.sent();
+
       };
-
-  wpcom({metaAPI: { accessAllUsersBlogs: true }}, function(err, response) {
-    if (err) {
-      throw err;
-    }
-
-    upgraded = true;
-
-    queue.each(send);
-
-  });
 
   bodyBuilder.disable();
 
@@ -477,10 +489,6 @@ $(function() {
 
   });
 
-  $.getJSON("help.json", function(response) {
-    endpoints = response.body;
-  });
-
   bodyBuilder.on('disable', function() {
     bodyBuilder.node.addClass('disabled');
   });
@@ -506,9 +514,13 @@ $(function() {
     }
   }
 
-  wpcom('/help', function(error, response) {
-    localStorage.endpoints = JSON.stringify(response);
-    endpoints = response;
+  $.ajax({
+    url: 'https://public-api.wordpress.com/rest/v1/help',
+    headers: {'accept':'application/json'},
+    success: function(response) {
+      localStorage.endpoints = JSON.stringify(response);
+      endpoints = response;
+    }
   });
 
   pathField.on('submit', function(path){
@@ -526,10 +538,8 @@ $(function() {
         request.query = $.extend(query, querystring.parse(path.slice(queryIndex + 1)));
       } catch(e) {
         // could not parse the query from the path, drop it
-        console.log("Couldn't parse it");
       }
       request.path = request.path.slice(0, queryIndex);
-      console.log("Updated the query", queryIndex, request.path, request);
     }
 
     if (request.path.indexOf('/') !== 0) {
@@ -543,7 +553,7 @@ $(function() {
   });
 
 });
-},{"../path":2,"./lookup_pane":7,"./method_selector":8,"./param_builder":9,"./path_field":10,"./request_viewer":11,"./tip":12,"liquidmetal":13,"querystring":28,"wpcom-proxy-request":14}],7:[function(require,module,exports){
+},{"../path":2,"./lookup_pane":7,"./method_selector":8,"./param_builder":9,"./path_field":10,"./request_viewer":11,"./tip":12,"liquidmetal":13,"querystring":19}],7:[function(require,module,exports){
 var Component = require('./component');
 
 LookupPane = Component.extend({
@@ -1150,7 +1160,7 @@ ParamBuilder.prototype.getQuery = function() {
 };
 
 module.exports = ParamBuilder;
-},{"../fn":1,"./component":5,"querystring":28}],10:[function(require,module,exports){
+},{"../fn":1,"./component":5,"querystring":19}],10:[function(require,module,exports){
 var Component = require('./component'),
     LookupPane = require('./lookup_pane'),
     fn = require('../fn'),
@@ -1425,7 +1435,7 @@ function buildNode(part) {
 
 module.exports = PathField;
 
-},{"../fn":1,"./component":5,"./lookup_pane":7,"util":30}],11:[function(require,module,exports){
+},{"../fn":1,"./component":5,"./lookup_pane":7,"util":21}],11:[function(require,module,exports){
 var Component = require('./component'),
     querystring = require('querystring');
 
@@ -1480,16 +1490,75 @@ RequestViewer.prototype.onResponse = function(err, response) {
   this.end_time = ts();
   this.ellapsed = this.end_time - this.start_time;
 
+  var body = null;
+
   if (err) {
     console.error("Error", err);
     this.node.addClass(this.options.errorClass);
-    this.status.text(err.statusCode >= 400 ? err.statusCode : 404);
+    if (err.errorType !== 'abort') {
+      this.status.text(err.status + " – " + err.error);
+
+    } else {
+      this.status.text("Error");
+    }
+    body = err.body;
   } else {
-    console.log("Response", response);
     this.status.text(this.ellapsed + 'ms');
+    body = response;
+  }
+
+  if (body) {
+    $('<div></div>').append(this.stringify(body)).addClass('compact').appendTo(this.node);
   }
 
 
+
+};
+
+RequestViewer.prototype.stringify = function(object, node) {
+
+  if (!node) {
+    node = $('<code></code>').addClass('compact');
+  }
+
+  if ($.isPlainObject(object)) {
+    node.append("{");
+    var trailing = "";
+    for(var key in object) {
+      node.append(trailing);
+      trailing = ", ";
+      node.append($('<span></span>').addClass('key').text(key + ': '));
+      // node.append(this.stringify(object[key]));
+      this.stringify(object[key], node);
+      if (node.text().length > 200) {
+        node.append(" …}");
+        return node;
+      }
+    }
+    node.last().remove();
+    node.append('}');
+  } else if ($.isArray(object)) {
+    node.append('[');
+    for (var i = 0; i < object.length; i++) {
+      if (i > 0) {
+        node.append(', ');
+      }
+      this.stringify(object[i], node);
+
+      if (node.text().length > 200) {
+        node.append(' …]');
+        return node;
+      }
+
+    }
+    node.append(']');
+  } else if (typeof object == 'string') {
+    node.append($("<span></span>").addClass('string').text('"' + object.replace(/"/g, "\\\"") + '"'));
+  } else {
+    node.append($("<span></span>").addClass(typeof object).text(object));
+  }
+
+  return node;
 
 };
 
@@ -1497,8 +1566,9 @@ function ts() {
   return (new Date()).getTime();
 }
 
+
 module.exports = RequestViewer;
-},{"./component":5,"querystring":28}],12:[function(require,module,exports){
+},{"./component":5,"querystring":19}],12:[function(require,module,exports){
 var Component = require('./component'),
     fn = require('../fn');
 
@@ -1881,1145 +1951,6 @@ module.exports = Tip;
 })(typeof window !== 'undefined' ? window : this);
 
 },{}],14:[function(require,module,exports){
-
-/**
- * Module dependencies.
- */
-
-var uid = require('uid');
-var event = require('component-event');
-var Promise = require('promise');
-var debug = require('debug')('wpcom-proxy-request');
-
-/**
- * Export `request` function.
- */
-
-module.exports = Promise.nodeify(request);
-
-/**
- * WordPress.com REST API base endpoint.
- */
-
-var proxyOrigin = 'https://public-api.wordpress.com';
-
-/**
- * "Origin" of the current HTML page.
- */
-
-var origin = window.location.protocol + '//' + window.location.hostname;
-debug('using "origin": %s', origin);
-
-/**
- * Reference to the <iframe> DOM element.
- * Gets set in the install() function.
- */
-
-var iframe;
-
-/**
- * Set to `true` upon the iframe's "load" event.
- */
-
-var loaded = false;
-
-/**
- * Array of buffered API requests. Added to when API requests are done before the
- * proxy <iframe> is "loaded", and fulfilled once the "load" DOM event on the
- * iframe occurs.
- */
-
-var buffered;
-
-/**
- * In-flight API request Promise instances.
- */
-
-var requests = {};
-
-/**
- * Performs a "proxied REST API request". This happens by calling
- * `iframe.postMessage()` on the proxy iframe instance, which from there
- * takes care of WordPress.com user authentication (via the currently
- * logged user's cookies).
- *
- * @param {Object|String} params
- * @api public
- */
-
-function request (params) {
-  debug('request()', params);
-
-  if ('string' == typeof params) {
-    params = { path: params };
-  }
-
-  // inject the <iframe> upon the first proxied API request
-  if (!iframe) install();
-
-  // generate a uid for this API request
-  var id = uid();
-  params.callback = id;
-  params.supports_args = true; // supports receiving variable amount of arguments
-
-  // force uppercase "method" since that's what the <iframe> is expecting
-  params.method = String(params.method || 'GET').toUpperCase();
-
-  debug('params object:', params);
-
-  var req = new Promise(function (resolve, reject) {
-    if (loaded) {
-      submitRequest(params, resolve, reject);
-    } else {
-      debug('buffering API request since proxying <iframe> is not yet loaded');
-      buffered.push([ params, resolve, reject ]);
-    }
-  });
-
-  // store the `params` object so that "onmessage" can access it again
-  requests[id] = params;
-
-  return req;
-}
-
-/**
- * Calls the postMessage() function on the <iframe>, and afterwards add the
- * `resolve` and `reject` functions to the "params" object (after it's been
- * serialized into the iframe context).
- *
- * @param {Object} params
- * @param {Function} resolve
- * @param {Function} reject
- * @api private
- */
-
-function submitRequest (params, resolve, reject) {
-  debug('sending API request to proxy <iframe>:', params);
-
-  iframe.contentWindow.postMessage(params, proxyOrigin);
-
-  // needs to be added after the `.postMessage()` call otherwise
-  // a DOM error is thrown
-  params.resolve = resolve;
-  params.reject = reject;
-}
-
-/**
- * Injects the proxy <iframe> instance in the <body> of the current
- * HTML page.
- *
- * @api private
- */
-
-function install () {
-  debug('install()');
-  if (iframe) uninstall();
-
-  buffered = [];
-
-  // listen to messages sent to `window`
-  event.bind(window, 'message', onmessage);
-
-  // create the <iframe>
-  iframe = document.createElement('iframe');
-
-  // set `loaded` to true once the "load" event happens
-  event.bind(iframe, 'load', onload);
-
-  // set `src` and hide the iframe
-  iframe.src = proxyOrigin + '/wp-admin/rest-proxy/#' + origin;
-  iframe.style.display = 'none';
-
-  // inject the <iframe> into the <body>
-  document.body.appendChild(iframe);
-}
-
-/**
- * The proxy <iframe> instance's "load" event callback function.
- *
- * @param {Event} e
- * @api private
- */
-
-function onload (e) {
-  debug('proxy <iframe> "load" event');
-  loaded = true;
-
-  // flush any buffered API calls
-  for (var i = 0; i < buffered.length; i++) {
-    submitRequest.apply(null, buffered[i]);
-  }
-  buffered = null;
-}
-
-/**
- * The main `window` object's "message" event callback function.
- *
- * @param {Event} e
- * @api private
- */
-
-function onmessage (e) {
-  debug('onmessage');
-
-  // safeguard...
-  if (e.origin !== proxyOrigin) {
-    debug('ignoring message... %s !== %s', e.origin, proxyOrigin);
-    return;
-  }
-
-  var data = e.data;
-  if (!data || !data.length) {
-    debug('`e.data` doesn\'t appear to be an Array, bailing...');
-    return;
-  }
-
-  var id = data[data.length - 1];
-  var params = requests[id];
-  delete requests[id];
-
-  var body = data[0];
-  var statusCode = data[1];
-  var headers = data[2];
-  debug('got %s status code for URL: %s', statusCode, params.path);
-
-  if (body && headers) {
-    body._headers = headers;
-  }
-
-  if (null == statusCode || 2 === Math.floor(statusCode / 100)) {
-    // 2xx status code, success
-    params.resolve(body);
-  } else {
-    // any other status code is a failure
-    var err = new Error();
-    err.statusCode = statusCode;
-    for (var i in body) err[i] = body[i];
-    if (body.error) err.name = toTitle(body.error) + 'Error';
-
-    params.reject(err);
-  }
-}
-
-function toTitle (str) {
-  if (!str || 'string' !== typeof str) return '';
-  return str.replace(/((^|_)[a-z])/g, function ($1) {
-    return $1.toUpperCase().replace('_', '');
-  });
-}
-
-},{"component-event":15,"debug":16,"promise":20,"uid":22}],15:[function(require,module,exports){
-var bind = window.addEventListener ? 'addEventListener' : 'attachEvent',
-    unbind = window.removeEventListener ? 'removeEventListener' : 'detachEvent',
-    prefix = bind !== 'addEventListener' ? 'on' : '';
-
-/**
- * Bind `el` event `type` to `fn`.
- *
- * @param {Element} el
- * @param {String} type
- * @param {Function} fn
- * @param {Boolean} capture
- * @return {Function}
- * @api public
- */
-
-exports.bind = function(el, type, fn, capture){
-  el[bind](prefix + type, fn, capture || false);
-  return fn;
-};
-
-/**
- * Unbind `el` event `type`'s callback `fn`.
- *
- * @param {Element} el
- * @param {String} type
- * @param {Function} fn
- * @param {Boolean} capture
- * @return {Function}
- * @api public
- */
-
-exports.unbind = function(el, type, fn, capture){
-  el[unbind](prefix + type, fn, capture || false);
-  return fn;
-};
-},{}],16:[function(require,module,exports){
-
-/**
- * This is the web browser implementation of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-
-exports = module.exports = require('./debug');
-exports.log = log;
-exports.formatArgs = formatArgs;
-exports.save = save;
-exports.load = load;
-exports.useColors = useColors;
-
-/**
- * Colors.
- */
-
-exports.colors = [
-  'lightseagreen',
-  'forestgreen',
-  'goldenrod',
-  'dodgerblue',
-  'darkorchid',
-  'crimson'
-];
-
-/**
- * Currently only WebKit-based Web Inspectors and the Firebug
- * extension (*not* the built-in Firefox web inpector) are
- * known to support "%c" CSS customizations.
- *
- * TODO: add a `localStorage` variable to explicitly enable/disable colors
- */
-
-function useColors() {
-  // is webkit? http://stackoverflow.com/a/16459606/376773
-  return ('WebkitAppearance' in document.documentElement.style) ||
-    // is firebug? http://stackoverflow.com/a/398120/376773
-    (window.console && (console.firebug || (console.exception && console.table)));
-}
-
-/**
- * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
- */
-
-exports.formatters.j = function(v) {
-  return JSON.stringify(v);
-};
-
-
-/**
- * Colorize log arguments if enabled.
- *
- * @api public
- */
-
-function formatArgs() {
-  var args = arguments;
-  var useColors = this.useColors;
-
-  args[0] = (useColors ? '%c' : '')
-    + this.namespace
-    + (useColors ? '%c ' : ' ')
-    + args[0]
-    + (useColors ? '%c ' : ' ')
-    + '+' + exports.humanize(this.diff);
-
-  if (!useColors) return args
-
-  var c = 'color: ' + this.color;
-  args = [args[0], c, ''].concat(Array.prototype.slice.call(args, 1));
-
-  // the final "%c" is somewhat tricky, because there could be other
-  // arguments passed either before or after the %c, so we need to
-  // figure out the correct index to insert the CSS into
-  var index = 0;
-  var lastC = 0;
-  args[0].replace(/%[a-z%]/g, function(match) {
-    if ('%%' === match) return;
-    index++;
-    if ('%c' === match) {
-      // we only are interested in the *last* %c
-      // (the user may have provided their own)
-      lastC = index;
-    }
-  });
-
-  args.splice(lastC, 0, c);
-  return args;
-}
-
-/**
- * Invokes `console.log()` when available.
- * No-op when `console.log` is not a "function".
- *
- * @api public
- */
-
-function log() {
-  // This hackery is required for IE8,
-  // where the `console.log` function doesn't have 'apply'
-  return 'object' == typeof console
-    && 'function' == typeof console.log
-    && Function.prototype.apply.call(console.log, console, arguments);
-}
-
-/**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-
-function save(namespaces) {
-  try {
-    if (null == namespaces) {
-      localStorage.removeItem('debug');
-    } else {
-      localStorage.debug = namespaces;
-    }
-  } catch(e) {}
-}
-
-/**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-
-function load() {
-  var r;
-  try {
-    r = localStorage.debug;
-  } catch(e) {}
-  return r;
-}
-
-/**
- * Enable namespaces listed in `localStorage.debug` initially.
- */
-
-exports.enable(load());
-
-},{"./debug":17}],17:[function(require,module,exports){
-
-/**
- * This is the common logic for both the Node.js and web browser
- * implementations of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-
-exports = module.exports = debug;
-exports.coerce = coerce;
-exports.disable = disable;
-exports.enable = enable;
-exports.enabled = enabled;
-exports.humanize = require('ms');
-
-/**
- * The currently active debug mode names, and names to skip.
- */
-
-exports.names = [];
-exports.skips = [];
-
-/**
- * Map of special "%n" handling functions, for the debug "format" argument.
- *
- * Valid key names are a single, lowercased letter, i.e. "n".
- */
-
-exports.formatters = {};
-
-/**
- * Previously assigned color.
- */
-
-var prevColor = 0;
-
-/**
- * Previous log timestamp.
- */
-
-var prevTime;
-
-/**
- * Select a color.
- *
- * @return {Number}
- * @api private
- */
-
-function selectColor() {
-  return exports.colors[prevColor++ % exports.colors.length];
-}
-
-/**
- * Create a debugger with the given `namespace`.
- *
- * @param {String} namespace
- * @return {Function}
- * @api public
- */
-
-function debug(namespace) {
-
-  // define the `disabled` version
-  function disabled() {
-  }
-  disabled.enabled = false;
-
-  // define the `enabled` version
-  function enabled() {
-
-    var self = enabled;
-
-    // set `diff` timestamp
-    var curr = +new Date();
-    var ms = curr - (prevTime || curr);
-    self.diff = ms;
-    self.prev = prevTime;
-    self.curr = curr;
-    prevTime = curr;
-
-    // add the `color` if not set
-    if (null == self.useColors) self.useColors = exports.useColors();
-    if (null == self.color && self.useColors) self.color = selectColor();
-
-    var args = Array.prototype.slice.call(arguments);
-
-    args[0] = exports.coerce(args[0]);
-
-    if ('string' !== typeof args[0]) {
-      // anything else let's inspect with %o
-      args = ['%o'].concat(args);
-    }
-
-    // apply any `formatters` transformations
-    var index = 0;
-    args[0] = args[0].replace(/%([a-z%])/g, function(match, format) {
-      // if we encounter an escaped % then don't increase the array index
-      if (match === '%%') return match;
-      index++;
-      var formatter = exports.formatters[format];
-      if ('function' === typeof formatter) {
-        var val = args[index];
-        match = formatter.call(self, val);
-
-        // now we need to remove `args[index]` since it's inlined in the `format`
-        args.splice(index, 1);
-        index--;
-      }
-      return match;
-    });
-
-    if ('function' === typeof exports.formatArgs) {
-      args = exports.formatArgs.apply(self, args);
-    }
-    var logFn = exports.log || enabled.log || console.log.bind(console);
-    logFn.apply(self, args);
-  }
-  enabled.enabled = true;
-
-  var fn = exports.enabled(namespace) ? enabled : disabled;
-
-  fn.namespace = namespace;
-
-  return fn;
-}
-
-/**
- * Enables a debug mode by namespaces. This can include modes
- * separated by a colon and wildcards.
- *
- * @param {String} namespaces
- * @api public
- */
-
-function enable(namespaces) {
-  exports.save(namespaces);
-
-  var split = (namespaces || '').split(/[\s,]+/);
-  var len = split.length;
-
-  for (var i = 0; i < len; i++) {
-    if (!split[i]) continue; // ignore empty strings
-    namespaces = split[i].replace('*', '.*?');
-    if (namespaces[0] === '-') {
-      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
-    } else {
-      exports.names.push(new RegExp('^' + namespaces + '$'));
-    }
-  }
-}
-
-/**
- * Disable debug output.
- *
- * @api public
- */
-
-function disable() {
-  exports.enable('');
-}
-
-/**
- * Returns true if the given mode name is enabled, false otherwise.
- *
- * @param {String} name
- * @return {Boolean}
- * @api public
- */
-
-function enabled(name) {
-  var i, len;
-  for (i = 0, len = exports.skips.length; i < len; i++) {
-    if (exports.skips[i].test(name)) {
-      return false;
-    }
-  }
-  for (i = 0, len = exports.names.length; i < len; i++) {
-    if (exports.names[i].test(name)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
- * Coerce `val`.
- *
- * @param {Mixed} val
- * @return {Mixed}
- * @api private
- */
-
-function coerce(val) {
-  if (val instanceof Error) return val.stack || val.message;
-  return val;
-}
-
-},{"ms":18}],18:[function(require,module,exports){
-/**
- * Helpers.
- */
-
-var s = 1000;
-var m = s * 60;
-var h = m * 60;
-var d = h * 24;
-var y = d * 365.25;
-
-/**
- * Parse or format the given `val`.
- *
- * Options:
- *
- *  - `long` verbose formatting [false]
- *
- * @param {String|Number} val
- * @param {Object} options
- * @return {String|Number}
- * @api public
- */
-
-module.exports = function(val, options){
-  options = options || {};
-  if ('string' == typeof val) return parse(val);
-  return options.long
-    ? long(val)
-    : short(val);
-};
-
-/**
- * Parse the given `str` and return milliseconds.
- *
- * @param {String} str
- * @return {Number}
- * @api private
- */
-
-function parse(str) {
-  var match = /^((?:\d+)?\.?\d+) *(ms|seconds?|s|minutes?|m|hours?|h|days?|d|years?|y)?$/i.exec(str);
-  if (!match) return;
-  var n = parseFloat(match[1]);
-  var type = (match[2] || 'ms').toLowerCase();
-  switch (type) {
-    case 'years':
-    case 'year':
-    case 'y':
-      return n * y;
-    case 'days':
-    case 'day':
-    case 'd':
-      return n * d;
-    case 'hours':
-    case 'hour':
-    case 'h':
-      return n * h;
-    case 'minutes':
-    case 'minute':
-    case 'm':
-      return n * m;
-    case 'seconds':
-    case 'second':
-    case 's':
-      return n * s;
-    case 'ms':
-      return n;
-  }
-}
-
-/**
- * Short format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-
-function short(ms) {
-  if (ms >= d) return Math.round(ms / d) + 'd';
-  if (ms >= h) return Math.round(ms / h) + 'h';
-  if (ms >= m) return Math.round(ms / m) + 'm';
-  if (ms >= s) return Math.round(ms / s) + 's';
-  return ms + 'ms';
-}
-
-/**
- * Long format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-
-function long(ms) {
-  return plural(ms, d, 'day')
-    || plural(ms, h, 'hour')
-    || plural(ms, m, 'minute')
-    || plural(ms, s, 'second')
-    || ms + ' ms';
-}
-
-/**
- * Pluralization helper.
- */
-
-function plural(ms, n, name) {
-  if (ms < n) return;
-  if (ms < n * 1.5) return Math.floor(ms / n) + ' ' + name;
-  return Math.ceil(ms / n) + ' ' + name + 's';
-}
-
-},{}],19:[function(require,module,exports){
-'use strict';
-
-var asap = require('asap')
-
-module.exports = Promise
-function Promise(fn) {
-  if (typeof this !== 'object') throw new TypeError('Promises must be constructed via new')
-  if (typeof fn !== 'function') throw new TypeError('not a function')
-  var state = null
-  var value = null
-  var deferreds = []
-  var self = this
-
-  this.then = function(onFulfilled, onRejected) {
-    return new Promise(function(resolve, reject) {
-      handle(new Handler(onFulfilled, onRejected, resolve, reject))
-    })
-  }
-
-  function handle(deferred) {
-    if (state === null) {
-      deferreds.push(deferred)
-      return
-    }
-    asap(function() {
-      var cb = state ? deferred.onFulfilled : deferred.onRejected
-      if (cb === null) {
-        (state ? deferred.resolve : deferred.reject)(value)
-        return
-      }
-      var ret
-      try {
-        ret = cb(value)
-      }
-      catch (e) {
-        deferred.reject(e)
-        return
-      }
-      deferred.resolve(ret)
-    })
-  }
-
-  function resolve(newValue) {
-    try { //Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
-      if (newValue === self) throw new TypeError('A promise cannot be resolved with itself.')
-      if (newValue && (typeof newValue === 'object' || typeof newValue === 'function')) {
-        var then = newValue.then
-        if (typeof then === 'function') {
-          doResolve(then.bind(newValue), resolve, reject)
-          return
-        }
-      }
-      state = true
-      value = newValue
-      finale()
-    } catch (e) { reject(e) }
-  }
-
-  function reject(newValue) {
-    state = false
-    value = newValue
-    finale()
-  }
-
-  function finale() {
-    for (var i = 0, len = deferreds.length; i < len; i++)
-      handle(deferreds[i])
-    deferreds = null
-  }
-
-  doResolve(fn, resolve, reject)
-}
-
-
-function Handler(onFulfilled, onRejected, resolve, reject){
-  this.onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : null
-  this.onRejected = typeof onRejected === 'function' ? onRejected : null
-  this.resolve = resolve
-  this.reject = reject
-}
-
-/**
- * Take a potentially misbehaving resolver function and make sure
- * onFulfilled and onRejected are only called once.
- *
- * Makes no guarantees about asynchrony.
- */
-function doResolve(fn, onFulfilled, onRejected) {
-  var done = false;
-  try {
-    fn(function (value) {
-      if (done) return
-      done = true
-      onFulfilled(value)
-    }, function (reason) {
-      if (done) return
-      done = true
-      onRejected(reason)
-    })
-  } catch (ex) {
-    if (done) return
-    done = true
-    onRejected(ex)
-  }
-}
-
-},{"asap":21}],20:[function(require,module,exports){
-'use strict';
-
-//This file contains then/promise specific extensions to the core promise API
-
-var Promise = require('./core.js')
-var asap = require('asap')
-
-module.exports = Promise
-
-/* Static Functions */
-
-function ValuePromise(value) {
-  this.then = function (onFulfilled) {
-    if (typeof onFulfilled !== 'function') return this
-    return new Promise(function (resolve, reject) {
-      asap(function () {
-        try {
-          resolve(onFulfilled(value))
-        } catch (ex) {
-          reject(ex);
-        }
-      })
-    })
-  }
-}
-ValuePromise.prototype = Object.create(Promise.prototype)
-
-var TRUE = new ValuePromise(true)
-var FALSE = new ValuePromise(false)
-var NULL = new ValuePromise(null)
-var UNDEFINED = new ValuePromise(undefined)
-var ZERO = new ValuePromise(0)
-var EMPTYSTRING = new ValuePromise('')
-
-Promise.from = Promise.cast = function (value) {
-  if (value instanceof Promise) return value
-
-  if (value === null) return NULL
-  if (value === undefined) return UNDEFINED
-  if (value === true) return TRUE
-  if (value === false) return FALSE
-  if (value === 0) return ZERO
-  if (value === '') return EMPTYSTRING
-
-  if (typeof value === 'object' || typeof value === 'function') {
-    try {
-      var then = value.then
-      if (typeof then === 'function') {
-        return new Promise(then.bind(value))
-      }
-    } catch (ex) {
-      return new Promise(function (resolve, reject) {
-        reject(ex)
-      })
-    }
-  }
-
-  return new ValuePromise(value)
-}
-Promise.denodeify = function (fn, argumentCount) {
-  argumentCount = argumentCount || Infinity
-  return function () {
-    var self = this
-    var args = Array.prototype.slice.call(arguments)
-    return new Promise(function (resolve, reject) {
-      while (args.length && args.length > argumentCount) {
-        args.pop()
-      }
-      args.push(function (err, res) {
-        if (err) reject(err)
-        else resolve(res)
-      })
-      fn.apply(self, args)
-    })
-  }
-}
-Promise.nodeify = function (fn) {
-  return function () {
-    var args = Array.prototype.slice.call(arguments)
-    var callback = typeof args[args.length - 1] === 'function' ? args.pop() : null
-    try {
-      return fn.apply(this, arguments).nodeify(callback)
-    } catch (ex) {
-      if (callback === null || typeof callback == 'undefined') {
-        return new Promise(function (resolve, reject) { reject(ex) })
-      } else {
-        asap(function () {
-          callback(ex)
-        })
-      }
-    }
-  }
-}
-
-Promise.all = function () {
-  var args = Array.prototype.slice.call(arguments.length === 1 && Array.isArray(arguments[0]) ? arguments[0] : arguments)
-
-  return new Promise(function (resolve, reject) {
-    if (args.length === 0) return resolve([])
-    var remaining = args.length
-    function res(i, val) {
-      try {
-        if (val && (typeof val === 'object' || typeof val === 'function')) {
-          var then = val.then
-          if (typeof then === 'function') {
-            then.call(val, function (val) { res(i, val) }, reject)
-            return
-          }
-        }
-        args[i] = val
-        if (--remaining === 0) {
-          resolve(args);
-        }
-      } catch (ex) {
-        reject(ex)
-      }
-    }
-    for (var i = 0; i < args.length; i++) {
-      res(i, args[i])
-    }
-  })
-}
-
-/* Prototype Methods */
-
-Promise.prototype.done = function (onFulfilled, onRejected) {
-  var self = arguments.length ? this.then.apply(this, arguments) : this
-  self.then(null, function (err) {
-    asap(function () {
-      throw err
-    })
-  })
-}
-
-Promise.prototype.nodeify = function (callback) {
-  if (callback === null || typeof callback == 'undefined') return this
-
-  this.then(function (value) {
-    asap(function () {
-      callback(null, value)
-    })
-  }, function (err) {
-    asap(function () {
-      callback(err)
-    })
-  })
-}
-
-Promise.prototype.catch = function (onRejected) {
-  return this.then(null, onRejected);
-}
-
-
-Promise.resolve = function (value) {
-  return new Promise(function (resolve) { 
-    resolve(value);
-  });
-}
-
-Promise.reject = function (value) {
-  return new Promise(function (resolve, reject) { 
-    reject(value);
-  });
-}
-
-Promise.race = function (values) {
-  return new Promise(function (resolve, reject) { 
-    values.map(function(value){
-      Promise.cast(value).then(resolve, reject);
-    })
-  });
-}
-
-},{"./core.js":19,"asap":21}],21:[function(require,module,exports){
-(function (process){
-
-// Use the fastest possible means to execute a task in a future turn
-// of the event loop.
-
-// linked list of tasks (single, with head node)
-var head = {task: void 0, next: null};
-var tail = head;
-var flushing = false;
-var requestFlush = void 0;
-var isNodeJS = false;
-
-function flush() {
-    /* jshint loopfunc: true */
-
-    while (head.next) {
-        head = head.next;
-        var task = head.task;
-        head.task = void 0;
-        var domain = head.domain;
-
-        if (domain) {
-            head.domain = void 0;
-            domain.enter();
-        }
-
-        try {
-            task();
-
-        } catch (e) {
-            if (isNodeJS) {
-                // In node, uncaught exceptions are considered fatal errors.
-                // Re-throw them synchronously to interrupt flushing!
-
-                // Ensure continuation if the uncaught exception is suppressed
-                // listening "uncaughtException" events (as domains does).
-                // Continue in next event to avoid tick recursion.
-                if (domain) {
-                    domain.exit();
-                }
-                setTimeout(flush, 0);
-                if (domain) {
-                    domain.enter();
-                }
-
-                throw e;
-
-            } else {
-                // In browsers, uncaught exceptions are not fatal.
-                // Re-throw them asynchronously to avoid slow-downs.
-                setTimeout(function() {
-                   throw e;
-                }, 0);
-            }
-        }
-
-        if (domain) {
-            domain.exit();
-        }
-    }
-
-    flushing = false;
-}
-
-if (typeof process !== "undefined" && process.nextTick) {
-    // Node.js before 0.9. Note that some fake-Node environments, like the
-    // Mocha test runner, introduce a `process` global without a `nextTick`.
-    isNodeJS = true;
-
-    requestFlush = function () {
-        process.nextTick(flush);
-    };
-
-} else if (typeof setImmediate === "function") {
-    // In IE10, Node.js 0.9+, or https://github.com/NobleJS/setImmediate
-    if (typeof window !== "undefined") {
-        requestFlush = setImmediate.bind(window, flush);
-    } else {
-        requestFlush = function () {
-            setImmediate(flush);
-        };
-    }
-
-} else if (typeof MessageChannel !== "undefined") {
-    // modern browsers
-    // http://www.nonblocking.io/2011/06/windownexttick.html
-    var channel = new MessageChannel();
-    channel.port1.onmessage = flush;
-    requestFlush = function () {
-        channel.port2.postMessage(0);
-    };
-
-} else {
-    // old browsers
-    requestFlush = function () {
-        setTimeout(flush, 0);
-    };
-}
-
-function asap(task) {
-    tail = tail.next = {
-        task: task,
-        domain: isNodeJS && process.domain,
-        next: null
-    };
-
-    if (!flushing) {
-        flushing = true;
-        requestFlush();
-    }
-};
-
-module.exports = asap;
-
-
-}).call(this,require("K/m7xv"))
-},{"K/m7xv":25}],22:[function(require,module,exports){
-/**
- * Export `uid`
- */
-
-module.exports = uid;
-
-/**
- * Create a `uid`
- *
- * @param {String} len
- * @return {String} uid
- */
-
-function uid(len) {
-  len = len || 7;
-  return Math.random().toString(35).substr(2, len);
-}
-
-},{}],23:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3324,7 +2255,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],24:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -3349,7 +2280,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],25:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -3414,7 +2345,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],26:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3500,7 +2431,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],27:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3587,20 +2518,20 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],28:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":26,"./encode":27}],29:[function(require,module,exports){
+},{"./decode":17,"./encode":18}],20:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],30:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -4190,4 +3121,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require("K/m7xv"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":29,"K/m7xv":25,"inherits":24}]},{},[6])
+},{"./support/isBuffer":20,"K/m7xv":16,"inherits":15}]},{},[6])

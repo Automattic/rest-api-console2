@@ -218,8 +218,8 @@ div#parts > div:first-child {
 }
 
 #search a:active {
-  background-color: hsl(205,38%,90%);
-  background-image: url(res/search-dark-@2x.png);
+  background-color: hsl(201,60%,70%);
+  background-image: url(res/search-@2x.png);
 }
 
 .endpoint #search a:active {
@@ -560,7 +560,7 @@ section#parameters div:focus {
 }
 
 #requests > div {
-  border-bottom: 1px solid hsl(205,38%,94%);
+  border-bottom: 1px solid hsl(205,38%,88%);
 }
 
 #requests > div > header {
@@ -648,6 +648,34 @@ section#parameters div:focus {
 
 #requests .loading header > span::before {
   display: none;
+}
+
+#requests > div > div.compact {
+  font-size: 12px;
+  padding: 2px 16px 8px;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  white-space: nowrap;
+}
+
+code.compact {
+  color: hsl(0,0%,50%);
+}
+
+code span.key {
+  color: hsl(296,77%,32%);
+}
+
+code span.string {
+  color: hsl(0,90%,60%);
+}
+
+code span.number {
+  color: hsl(210,90%,60%);
 }
 
 @-webkit-keyframes throbber {

@@ -5,7 +5,7 @@
   "homepage": "https://github.com/beaucollins/wpcom-console2",
   "main": "lib/index.js",
   "scripts": {
-    "server" : "server",
+    "start" : "node server.js",
     "test": "mocha"
   },
   "author": {
@@ -18,8 +18,7 @@
     "express" : "*"
   },
   "dependencies": {
-    "liquidmetal": "rmm5t/liquidmetal",
-    "wpcom-proxy-request": "Automattic/wpcom-proxy-request"
+    "liquidmetal": "rmm5t/liquidmetal"
   },
   "repository": {
     "type": "git",
