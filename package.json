@@ -20,7 +20,8 @@
     "browserify" : "*",
     "browserify-middleware" : "*",
     "jade" : "*",
-    "morgan" : "*"
+    "morgan" : "*",
+    "minifier" : "*"
   },
   "dependencies": {
     "liquidmetal": "rmm5t/liquidmetal"
