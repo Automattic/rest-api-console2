@@ -21,7 +21,8 @@
     "browserify-middleware" : "*",
     "jade" : "*",
     "morgan" : "*",
-    "minifier" : "*"
+    "minifier" : "*",
+    "node-sass" : "*"
   },
   "dependencies": {
     "liquidmetal": "rmm5t/liquidmetal"
