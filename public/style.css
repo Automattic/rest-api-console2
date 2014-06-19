@@ -43,6 +43,7 @@ div#parts > div {
   font-family: "bitstream_vera_sans_monoroman";
   padding: 1px 1px 0 1px;
   line-height: 16px;
+  min-height: 16px;
   flex-grow: 0;
   -webkit-flex-grow: 0;
   color: hsl(202,20%,44%);
@@ -559,10 +560,6 @@ section#parameters div:focus {
   color: hsl(195,75%,100%);
 }
 
-#requests > div {
-  border-bottom: 1px solid hsl(205,38%,88%);
-}
-
 #requests > div > header {
   padding: 8px 16px;
   display: flex;
@@ -662,6 +659,19 @@ section#parameters div:focus {
   white-space: nowrap;
 }
 
+#requests > div:first-child {
+  border-top: 1px solid hsl(205,38%,88%);
+}
+
+#requests > div {
+  border-bottom: 1px solid hsl(205,38%,88%);
+}
+
+#requests > div:focus {
+  outline: none;
+  background-color: hsl(205,38%,94%);
+}
+
 code.compact {
   color: hsl(0,0%,50%);
 }
@@ -671,7 +681,7 @@ code span.key {
 }
 
 code span.string {
-  color: hsl(0,90%,60%);
+  color: hsl(100,90%,40%);
 }
 
 code span.number {
