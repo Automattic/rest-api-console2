@@ -1184,6 +1184,9 @@ var PathField = Component.extend({
 
     this.node.on('click', this.options.submit, this.buildPath.bind(this));
     this.node.on('click', this.options.search, this.onSearch.bind(this));
+
+    this.node.on('keypress', this.options.submit, this.onSubmitKeypress.bind(this));
+
     this.partsNode = this.node.find(this.options.container);
 
     this.lookupPane = new LookupPane($("#lookup"), {
@@ -1297,7 +1300,11 @@ PathField.prototype.focus = function() {
 
   var part = this.focusable_parts[0];
 
-  if (part) $(part.node).focus();
+  if (part) {
+    $(part.node).focus();
+  } else {
+    this.node.find(this.options.submit).focus();
+  }
 
 };
 
@@ -1341,6 +1348,14 @@ PathField.prototype.onKeydown = function(e) {
     }
 
     return false;
+  }
+
+};
+
+PathField.prototype.onSubmitKeypress = function(e) {
+
+  if (e.which == 13 || e.which == 32) { // return or space
+    this.buildPath();
   }
 
 };
@@ -1393,9 +1408,12 @@ function buildNode(part) {
           e.preventDefault();
           field.lookupPane.highlightNext();
           return;
-        } else if (e.which == 13) {
+        } else if (e.which == 13) { // return
           e.preventDefault();
-          if (!hasSelection) field.lookupPane.selectCurrent();
+          if (hasSelection || !field.lookupPane.selectCurrent()){
+            field.buildPath();
+            field.lookupPane.hide();
+          }
           return false;
         }
       })
