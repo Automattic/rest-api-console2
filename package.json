@@ -6,6 +6,7 @@
   "main": "lib/index.js",
   "scripts": {
     "start" : "node server.js",
+    "build" : "bash build.sh",
     "test": "mocha"
   },
   "author": {
@@ -15,7 +16,11 @@
   "license": "MIT",
   "devDependencies": {
     "mocha" : "*",
-    "express" : "*"
+    "express" : "*",
+    "browserify" : "*",
+    "browserify-middleware" : "*",
+    "jade" : "*",
+    "morgan" : "*"
   },
   "dependencies": {
     "liquidmetal": "rmm5t/liquidmetal"
