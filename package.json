@@ -1,6 +1,6 @@
 {
   "name": "console2",
-  "version": "0.0.0",
+  "version": "0.9.0",
   "description": "A better REST console for WordPress.com.",
   "homepage": "https://github.com/beaucollins/wpcom-console2",
   "main": "lib/index.js",
