@@ -161,8 +161,6 @@ div#parts {
   background-color: hsl(201,60%,60%);
   font-size: 14px;
 
-  min-width: 44px;
-
   cursor: pointer;
 
   // CSS3 Flexbox
@@ -235,6 +233,8 @@ div#parts {
   }
 
   &.loading {
+
+    min-width: 88px;
 
     justify-content: center;
     -webkit-justify-content: center;
