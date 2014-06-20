@@ -9,7 +9,7 @@ log=$build/build.log
 # Build output directory
 dir=$build/wpcom-console
 
-build_number=`git describe --always --tag --dirty`
+build_number=`git describe --always --tag --long --dirty`
 version=`$bin/json -f package.json version`
 
 # Cleanout contents of directory and make a fresh one
