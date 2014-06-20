@@ -190,6 +190,12 @@ div#parts {
 
   div#path > & {
     padding: 0;
+
+    &:active, &.active {
+      color: hsl(201,60%,70%);
+      background-color: hsl(201,60%,100%);
+    }
+
   }
 
   .label::before {
@@ -216,9 +222,20 @@ div#parts {
     display: none;
   }
 
-  img {
-    width: 44px;
-    height: 44px;
+  span.img {
+
+    background: hsl(201,60%,40%);
+
+
+    img {
+      display: block;
+      width: 44px;
+      height: 44px;
+      opacity: 0;
+      transition: opacity 200ms 200ms;
+      -webkit-transition: opacity 200ms 200ms;
+      -moz-transition: opacity 200ms 200ms;
+    }
 
   }
 
@@ -228,6 +245,11 @@ div#parts {
       content: '\f470';
       left: 0;
       width: 44px;
+    }
+
+    .extra {
+      position: relative;
+      left: -3px;
     }
 
   }
@@ -395,15 +417,18 @@ div#submit {
   background-size: 24px 24px;
   color: hsl(201,60%,97%);
   cursor: pointer;
-  min-width: 32px;
+  min-width: 44px;
   text-align: center;
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+
 
   &:hover, &:focus {
     outline: none;
     background-color: hsl(201,60%,70%);
   }
 
-  div#path > &:active {
+  div#path > &:active, div#path > &.active {
     color: hsl(201,60%,70%);
     background-color: hsl(201,60%,100%);
     background-image: url(res/return-dark-@2x.png);
