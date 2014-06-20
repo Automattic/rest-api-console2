@@ -10,6 +10,7 @@ log=$build/build.log
 dir=$build/wpcom-console
 
 build_number=`git describe --always --tag --dirty`
+version=`$bin/json -f package.json version`
 
 # Cleanout contents of directory and make a fresh one
 rm -r $build
@@ -19,7 +20,11 @@ mkdir -p $dir
 cp -r public $dir
 
 # Compile jade template
-$bin/jade -O "{\"app_id\":\"$APP_ID\",\"build\":\"$build_number\"}" < templates/views/index.html > $dir/public/index.html 2>> $log
+config=$($bin/json -f config.json -e "this.build=\"$build_number\"; this.version=\"$version\"")
+configString=$(node -e "process.stdout.write(JSON.stringify($config).replace(/\"/g,\"\\\"\"));")
+echo "Config $configString"
+
+$bin/jade -O $configString  < templates/views/app.jade > $dir/public/index.html
 
 # Compile sass template
 $bin/node-sass --output-style=compressed templates/sass/style.scss $dir/public/style.css 2>> $log 1>> $log

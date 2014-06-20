@@ -22,7 +22,8 @@
     "jade" : "*",
     "morgan" : "*",
     "minifier" : "*",
-    "node-sass" : "*"
+    "node-sass" : "*",
+    "json" : "*"
   },
   "dependencies": {
     "liquidmetal": "rmm5t/liquidmetal"
