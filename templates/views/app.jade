@@ -1,0 +1,42 @@
+doctype html
+html(lang="en")
+
+  head
+    link(rel="stylesheet", type="text/css", charset="utf-8" href="style.css")
+    title WordPress.com Console
+    meta(http-equiv="Content-Type", content="text/html, charset=utf-8")
+
+    if version
+      meta(name="version", content=version)
+    if build
+      meta(name="build", content=build)
+    if redirect_uri
+      meta(name="redirect_uri", content=redirect_uri)
+    if client_id
+      meta(name="client_id", content=client_id)
+
+    script(type="text/javascript", src="zepto.min.js")
+    script(type="text/javascript", src="app.js")
+
+  body
+    section#builder
+      #path
+        #auth(tabindex="1")
+        #parts
+          #method.enabled(tabindex="1")
+            span
+            #methods
+          #search
+            a
+          #lookup
+        #submit(tabindex="1")
+      section#parameters
+        #query
+        #body.disabled
+    section#requests
+    #tip
+      .anchor
+      header
+        code
+        em
+      ul
