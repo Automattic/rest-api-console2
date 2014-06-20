@@ -1,5 +1,38 @@
 @import "type";
 
+@mixin flexbox($justify: center, $align: center) {
+  // CSS Flexbox container properties
+  display: flex;
+  display: -webkit-flex;
+
+  flex-direction: row;
+  -webkit-flex-direction: row;
+
+  flex-wrap: nowrap;
+  -webkit-flex-wrap: nowrap;
+
+  justify-content: $justify;
+  -webkit-justify-content: $justify;
+
+  align-items: $align;
+  -webkit-align-items: $align;
+
+}
+
+@mixin flex($grow:0, $shrink:1) {
+  flex-grow: $grow;
+  -webkit-flex-grow: $grow;
+  flex-shrink: $shrink;
+  -webkit-flex-shrink: $shrink;
+}
+
+%genericon {
+  font-family: Genericons;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: inline-block;
+}
+
 body {
   margin:0;
   font-family: "open_sans";
@@ -16,13 +49,8 @@ pre, code {
 }
 
 
-/*****************************************************
+/* +Main Toolbar */
 
-Component to enter endpoint to search or path to use
-
-Using CSS3 Flexbox
-
-******************************************************/
 div#path {
   background: hsl(202,68%,44%);
   top: 0;
@@ -33,17 +61,7 @@ div#path {
   font-size: 18px;
   z-index: 2;
 
-  // CSS Flexbox container properties
-  display: flex;
-  display: -webkit-flex;
-  flex-direction: row;
-  -webkit-flex-direction: row;
-  flex-wrap: nowrap;
-  -webkit-flex-wrap: nowrap;
-  justify-content: stretch;
-  -webkit-justify-content: stretch;
-  align-items: stretch;
-  -webkit-align-items: stretch;
+  @include flexbox(center, stretch);
 
   > div {
     padding: 8px;
@@ -57,30 +75,10 @@ div#parts {
   overflow: visible;
   background: hsl(205,38%,100%);
 
-  // CSS3 Flexbox
-  display: flex;
-  display: -webkit-flex;
-  flex-direction: row;
-  -webkit-flex-direction: row;
-  // Items do not wrap
-  flex-wrap: nowrap;
-  -webkit-flex-wrap: nowrap;
-
-  // Contents are lined up towards the center
-  justify-content: flex-start;
-  -webkit-justify-content: flex-start;
-
-  // Flex children are centered vertically
-  align-items: center;
-  -webkit-align-items: center;
+  @include flexbox(flex-start, center);
 
   // As a flexbox child element expands to fill space
-  flex-grow: 1;
-  -webkit-flex-grow: 1;
-
-  // As a flexbox child element will not shrink
-  flex-shrink: 0;
-  -webkit-flex-shrink: 0;
+  @include flex(1, 0);
 
   .endpoint > & {
     background: hsl(205,38%,94%);
@@ -97,19 +95,14 @@ div#parts {
     overflow: hidden;
     text-overflow: ellipsis ellipsis;
 
-    // CSS3 Flexbox shild properties
-    flex-grow: 0;
-    -webkit-flex-grow: 0;
-    flex-shrink: 0;
-    -webkit-flex-shrink: 0;
-
+    // CSS3 Flexbox child properties
+    @include flex(0, 0);
 
     &:nth-last-child(3):nth-child(2) {
       background: none;
       border: none;
 
-      flex-grow: 1;
-      -webkit-flex-grow: 1;
+      @include flex(1, 0);
     }
 
     &:nth-last-child(3):first-child:focus {
@@ -127,9 +120,6 @@ div#parts {
       padding-left: 6px;
       padding-right: 6px;
       border-radius: 2px;
-
-      flex-shrink: 0;
-      -webkit-flex-shrink: 0;
 
       &:focus {
         outline: none;
@@ -163,22 +153,7 @@ div#parts {
 
   cursor: pointer;
 
-  // CSS3 Flexbox
-  display: flex;
-  display: -webkit-flex;
-  flex-direction: row;
-  -webkit-flex-direction: row;
-  // Items do not wrap
-  flex-wrap: nowrap;
-  -webkit-flex-wrap: nowrap;
-
-  // Contents are lined up towards the center
-  justify-content: flex-start;
-  -webkit-justify-content: flex-start;
-
-  // Flex children are centered vertically
-  align-items: center;
-  -webkit-align-items: center;
+  @include flexbox(flex-start, center);
 
   // As a flexbox child element will not shrink
   flex-shrink: 0;
@@ -199,13 +174,10 @@ div#parts {
   }
 
   .label::before {
+    @extend %genericon;
     position: relative;
     content: '\f427';
-    font-family: Genericons;
     font-size: 22px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    display: inline-block;
     vertical-align: -6px;
     text-align: center;
     left: 0px;
@@ -452,7 +424,7 @@ div#submit {
     height: 24px;
     opacity: 1;
     overflow: hidden;
-    background: url(res/search-dark-@2x.png) no-repeat center center transparent; /*hsl(201,60%,100%);*/
+    background: url(res/search-dark-@2x.png) no-repeat center center transparent;
     background-size: 16px 16px;
 
     .endpoint & {
@@ -720,11 +692,7 @@ div.container {
   }
 }
 
-/*****************************************************
-
-Tooltip for displaying around a node
-
-*****************************************************/
+/*Tooltip*/
 
 #tip {
   position: absolute;
@@ -761,23 +729,16 @@ Tooltip for displaying around a node
   header {
     position: relative;
     padding: 8px;
-    display: flex;
-    display: -webkit-flex;
-    flex-direction: row;
-    -webkit-flex-direction: row;
-    flex-wrap: nowrap;
-    -webkit-flex-wrap: nowrap;
-    justify-content: center;
-    -webkit-justify-content: center;
-    align-items: baseline;
-    -webkit-align-items: baseline;
     z-index: 1;
+
+    @include flexbox(center, baseline);
 
     code {
       color: hsl(0,0%,100%);
-      flex-grow: 1;
-      -webkit-flex-grow: 1;
       margin-right: 10px;
+
+      @include flex(1, 1);
+
     }
 
   }
@@ -855,13 +816,10 @@ Tooltip for displaying around a node
       font-size: 12px;
 
       &::before {
+        @extend %genericon;
         content: '\f303';
-        font-family: Genericons;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
         font-size: 16px;
         line-height: 14px;
-        display: inline-block;
         vertical-align: -3px;
         margin-right: 2px;
       }
