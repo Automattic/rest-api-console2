@@ -1,3 +1,7 @@
+mixin appscript(name)
+  - var src = name + "?" + (build == 'dev' ? (new Date).getTime() : build)
+    script(type="text/javascript", src=src)
+
 doctype html
 html(lang="en")
 
@@ -19,8 +23,10 @@ html(lang="en")
     if client_id
       meta(name="client_id", content=client_id)
 
-    script(type="text/javascript", src="zepto.min.js")
-    script(type="text/javascript", src="app.js")
+    meta(name="generated_at", content=(new Date).getTime())
+
+    +appscript('zepto.min.js')
+    +appscript('app.js')
 
   body
     section#builder
