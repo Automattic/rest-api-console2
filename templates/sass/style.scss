@@ -279,9 +279,10 @@ div#parts {
 
 .throbber {
   padding: 0 18px;
+  display: inline-block;
 
   .loading & {
-    display: block;
+    display: inline-block;
   }
 
   div {
@@ -675,7 +676,6 @@ div.container {
     right: 0;
     left: 0;
     height: 4px;
-    background: #F00;
     z-index: 1;
     position: absolute;
     background: linear-gradient(hsla(0,0%,0%,0.2), hsla(0,0%,0%,0.0));
@@ -837,39 +837,6 @@ div.container {
     }
   }
 
-  .loading header > span {
-    position: relative;
-    top: 2px;
-    width: 14px;
-    height: 14px;
-    border: 0 solid hsl(202,60%,44%);
-    border-radius: 100%;
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-animation: throbber ease-out 0.7s infinite;
-    -moz-animation: throbber ease-out 0.7s infinite;
-    animation: throbber ease-out 0.7s infinite;
-
-    &::before {
-      display: none;
-    }
-
-  }
-
-  > div {
-    border-bottom: 1px solid hsl(205,38%,88%);
-
-    &:first-child {
-      border-top: 1px solid hsl(205,38%,88%);
-    }
-
-    &:focus {
-      outline: none;
-      background-color: hsl(205,38%,94%);
-    }
-
-  }
-
 } // #requests
 
 
@@ -901,6 +868,70 @@ code {
     &.number {
       color: hsl(210,90%,60%);
     }
+  }
+
+}
+
+.log {
+
+  @include flexbox('flex-start');
+
+  cursor: pointer;
+  border-bottom: 1px solid hsl(205,38%,88%);
+
+  &:first-child {
+      border-top: 1px solid hsl(205,38%,88%);
+  }
+
+  &:focus {
+    outline: none;
+    background-color: hsl(205,38%,94%);
+  }
+
+  > div {
+    &:first-child {
+      @include flex(1,1);
+    }
+    &:last-child {
+      @include flex(0,0);
+      min-width: 48px;
+      text-align: center;
+    }
+  }
+
+  &.complete {
+    > div:last-child::before {
+      display: inline-block;
+      content: '';
+      width: 24px;
+      height: 24px;
+      border-radius: 100%;
+      background: url(res/disclosure-dark-@2x.png) center center no-repeat;
+      background-size: 16px 16px;
+      opacity: 0.5;
+    }
+
+    &:focus {
+      > div:last-child::before {
+        opacity: 1;
+      }
+    }
+
+    &:hover {
+      > div:last-child::before {
+        background-image: url(res/disclosure-@2x.png);
+        background-color: hsl(201,60%,60%);
+      }
+    }
+  }
+
+  .throbber {
+    padding: 0;
+
+    div {
+      border-color: hsl(201,60%,60%);
+    }
+
   }
 
 }
