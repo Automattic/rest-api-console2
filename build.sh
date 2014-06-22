@@ -30,7 +30,7 @@ $bin/jade -O $configString  < templates/views/app.jade > $dir/public/index.html
 $bin/node-sass --output-style=compressed templates/sass/style.scss $dir/public/style.css 2>> $log 1>> $log
 
 # Compile browserify package
-$bin/browserify lib/ui -o $dir/public/app.source.js 2>> $log 1>> $log
+$bin/browserify lib/app.js -o $dir/public/app.source.js 2>> $log 1>> $log
 # Minify app js
 $bin/minify -o $dir/public/app.js $dir/public/app.source.js 2>> $log 1>> $log
 # Remove

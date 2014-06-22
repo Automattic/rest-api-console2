@@ -1,5 +1,4 @@
 var express = require('express'),
-    morgan = require('morgan'),
     browserify = require('browserify-middleware'),
     sass = require('node-sass'),
     app = express(),
@@ -22,7 +21,7 @@ app.set('view engine', 'jade');
 app.set('views', process.cwd() + '/templates/views');
 
 // build app.js using browserify
-app.get('/app.js', browserify('./lib/ui/index.js'));
+app.get('/app.js', browserify('./lib/app.js'));
 
 // compile sass files
 app.use(sass.middleware({
