@@ -769,80 +769,11 @@ div.container {
 
 #requests {
 
-  header {
-    padding: 8px 16px;
-    display: flex;
-    display: -webkit-flex;
-    flex-direction: row;
-    -webkit-flex-direction: row;
-    flex-wrap: nowrap;
-    -webkit-flex-wrap: nowrap;
-    justify-content: flex-start;
-    -webkit-justify-content: flex-start;
-    align-items: baseline;
-    -webkit-align-items: baseline;
-    line-height: 1.5;
-
-    > code:first-child {
-      color: hsl(202,68%,80%);
-      text-transform: uppercase;
-      margin-right: 8px;
-      flex-shrink: 0;
-      -webkit-flex-shrink: 0;
-    }
-
-    > code:nth-child(2) {
-      color: hsl(202,68%,44%);
-    }
-
-    > code:nth-last-of-type(1) {
-      flex-grow: 1;
-      -webkit-flex-grow: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    em {
-      font-style: normal;
-      color: hsl(202,9%,44%);
-    }
-
-    > span {
-      color: hsl(202,0%,50%);
-      white-space: nowrap;
-      flex-shrink: 0;
-      -webkit-flex-shrink: 0;
-      font-size: 12px;
-
-      &::before {
-        @extend %genericon;
-        content: '\f303';
-        font-size: 16px;
-        line-height: 14px;
-        vertical-align: -3px;
-        margin-right: 2px;
-      }
-
-    }
-
-  } // #requests header
-
-  .error header > span {
-    color: hsl(0,100%,50%);
-
-    ::before {
-      content: '\f414';
-      margin-right: 8px;
-    }
-  }
-
 } // #requests
 
 
 div.compact {
   font-size: 12px;
-  padding: 2px 16px 8px;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -874,56 +805,62 @@ code {
 
 .log {
 
-  @include flexbox('flex-start');
+  #requests & {
+    @include flexbox('flex-start');
 
-  cursor: pointer;
-  border-bottom: 1px solid hsl(205,38%,88%);
+    cursor: pointer;
+    border-bottom: 1px solid hsl(205,38%,88%);
+    padding: 8px 0 8px 16px;
 
-  &:first-child {
-      border-top: 1px solid hsl(205,38%,88%);
-  }
-
-  &:focus {
-    outline: none;
-    background-color: hsl(205,38%,94%);
-  }
-
-  > div {
     &:first-child {
-      @include flex(1,1);
-    }
-    &:last-child {
-      @include flex(0,0);
-      min-width: 48px;
-      text-align: center;
-    }
-  }
-
-  &.complete {
-    > div:last-child::before {
-      display: inline-block;
-      content: '';
-      width: 24px;
-      height: 24px;
-      border-radius: 100%;
-      background: url(res/disclosure-dark-@2x.png) center center no-repeat;
-      background-size: 16px 16px;
-      opacity: 0.5;
+        border-top: 1px solid hsl(205,38%,88%);
     }
 
     &:focus {
-      > div:last-child::before {
-        opacity: 1;
+      outline: none;
+      background-color: hsl(205,38%,94%);
+    }
+
+    > div {
+      &:first-child {
+        @include flex(1,1);
+      }
+      &:last-child {
+        @include flex(0,0);
+        min-width: 48px;
+        text-align: center;
       }
     }
 
-    &:hover {
+    &.complete {
+
       > div:last-child::before {
-        background-image: url(res/disclosure-@2x.png);
-        background-color: hsl(201,60%,60%);
+        display: inline-block;
+        content: '';
+        width: 24px;
+        height: 24px;
+        border-radius: 100%;
+        background: url(res/disclosure-dark-@2x.png) center center no-repeat;
+        background-size: 16px 16px;
+        opacity: 0.5;
+      }
+
+      &:focus {
+        > div:last-child::before {
+          opacity: 1;
+        }
+      }
+
+      &:hover {
+        > div:last-child::before {
+          background-image: url(res/disclosure-@2x.png);
+          background-color: hsl(201,60%,60%);
+        }
       }
     }
+
   }
+
 
   .throbber {
     padding: 0;
@@ -934,6 +871,152 @@ code {
 
   }
 
+  header {
+
+    @include flexbox('flex-start', 'center');
+    line-height: 1.5;
+    min-width: 320px;
+
+    > code {
+      display: block;
+    }
+
+    > code:first-of-type {
+      color: hsl(202,68%,80%);
+      text-transform: uppercase;
+      margin-right: 8px;
+      flex-shrink: 0;
+      -webkit-flex-shrink: 0;
+    }
+
+    > code:nth-of-type(2) {
+      color: hsl(202,68%,44%);
+    }
+
+    > code:nth-last-of-type(1) {
+      flex-grow: 1;
+      -webkit-flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    em {
+      font-style: normal;
+      color: hsl(202,9%,44%);
+    }
+
+    > span {
+      color: hsl(202,0%,50%);
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    > span:last-child {
+
+      &::before {
+        @extend %genericon;
+        content: '\f303';
+        font-size: 16px;
+        line-height: 14px;
+        vertical-align: -3px;
+        margin-right: 2px;
+      }
+
+    }
+
+  } // #requests header
+
+  &.error header > span:last-child {
+    color: hsl(0,100%,50%);
+
+    ::before {
+      content: '\f414';
+      margin-right: 8px;
+    }
+  }
+
+  .compact {
+    line-height: 18px;
+  }
+
+}
+
+#detail {
+  position: fixed;
+  right: 0;
+  top: 0;
+  left: 32px;
+  bottom: 0;
+  opacity: 1;
+  background: hsl(0, 0%, 100%);
+  -webkit-transition: -webkit-transform 300ms, opacity 300ms;
+  -webkit-transform: translate(105%, 0);
+  z-index: 50;
+  box-shadow: 0 0 5px hsla(0,0%,0%,1);
+
+  &.display {
+    opacity: 1;
+    -webkit-transform: translate(0, 0);
+  }
+
+  header {
+    padding: 8px 16px 8px 8px;
+    background: hsl(205,38%,94%);
+
+    > span:first-child {
+      cursor: pointer;
+      width: 16px;
+      height: 20px;
+      margin-right: 8px;
+      background: url(res/disclosure-dark-@2x.png) center center no-repeat;
+      background-size: 16px 16px;
+      -moz-transform: rotate(180deg);
+      -webkit-transform: rotate(180deg);
+      transform: rotat(180deg);
+      opacity: 0.5;
+
+      &:hover {
+        opacity: 1;
+      }
+
+    }
+
+  }
+
+  > div {
+    position: absolute;
+    top: 36px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: auto;
+    padding: 8px;
+  }
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  background: hsla(0,0%,0%,0.3);
+  z-index: 49;
+  opacity: 0;
+  -webkit-transform: translate(100%,0);
+  -moz-transform: translate(100%,0);
+  transform: translate(100%,0);
+  -moz-transition: opacity 200ms;
+  -webkit-transition: opacity 200ms;
+  transition: opacity 200ms;
+
+  &.display {
+    -webkit-transform: none;
+    -moz-transform: none;
+    transform: none;
+    opacity: 1;
+  }
 }
 
 @-webkit-keyframes throbber {
