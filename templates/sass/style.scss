@@ -1,15 +1,15 @@
 @import "type";
 
-@mixin flexbox($justify: center, $align: center) {
+@mixin flexbox($justify: center, $align: center, $direction: row, $wrap: nowrap) {
   // CSS Flexbox container properties
   display: flex;
   display: -webkit-flex;
 
-  flex-direction: row;
-  -webkit-flex-direction: row;
+  flex-direction: $direction;
+  -webkit-flex-direction: $direction;
 
-  flex-wrap: nowrap;
-  -webkit-flex-wrap: nowrap;
+  flex-wrap: $wrap;
+  -webkit-flex-wrap: $wrap;
 
   justify-content: $justify;
   -webkit-justify-content: $justify;
@@ -962,6 +962,7 @@ code {
 }
 
 #detail {
+  @include flexbox(flex-start, stretch, column);
   position: fixed;
   right: 0;
   top: 0;
@@ -988,6 +989,7 @@ code {
   header {
     padding: 8px 16px 8px 8px;
     background: hsl(205,38%,94%);
+    @include flex(0,0);
 
     > span:first-child {
       cursor: pointer;
@@ -1010,13 +1012,9 @@ code {
   }
 
   > div {
-    position: absolute;
-    top: 36px;
-    left: 0;
-    right: 0;
-    bottom: 0;
     overflow: auto;
     padding: 8px;
+    @include flex(1,1);
   }
 }
 
