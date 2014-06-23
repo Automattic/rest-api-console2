@@ -26,7 +26,8 @@
     "json" : "*"
   },
   "dependencies": {
-    "liquidmetal": "rmm5t/liquidmetal"
+    "liquidmetal": "rmm5t/liquidmetal",
+    "fn": "beaucollins/node-fn"
   },
   "repository": {
     "type": "git",
