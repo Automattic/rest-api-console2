@@ -23,7 +23,7 @@ Visit [http://localhost:4000](http://localhost:4000) in your browser.
 
 **Tip**: You can change the port using the `PORT` environment variable:
 
-   sudo PORT=80 npm start
+    sudo PORT=80 npm start
 
 WordPress.com's App settings do not allow CORS URI's with ports in them.
 
