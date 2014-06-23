@@ -940,6 +940,25 @@ code {
     line-height: 18px;
   }
 
+  a[download] {
+    text-decoration: none;
+    display: inline-block;
+    vertical-align: -6px;
+    margin-right: 8px;
+    color: hsl(202,68%,68%);
+
+    &:hover {
+      color: hsl(202,68%,44%);
+    }
+
+    &::before {
+      @extend %genericon;
+      content: '\f440';
+      font-size: 24px;
+      line-height: 24px;
+    }
+  }
+
 }
 
 #detail {
@@ -951,13 +970,19 @@ code {
   opacity: 1;
   background: hsl(0, 0%, 100%);
   -webkit-transition: -webkit-transform 300ms, opacity 300ms;
+  -moz-transition: -moz-transform 300ms, opacity 300ms;
+  transition: transform 300ms, opacity 300ms;
   -webkit-transform: translate(105%, 0);
+  -moz-transform: translate(105%, 0);
+  transform: translate(105%, 0);
   z-index: 50;
   box-shadow: 0 0 5px hsla(0,0%,0%,1);
 
   &.display {
     opacity: 1;
     -webkit-transform: translate(0, 0);
+    -moz-transform: translate(0, 0);
+    transform: translate(0, 0);
   }
 
   header {
