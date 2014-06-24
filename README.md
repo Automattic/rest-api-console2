@@ -2,7 +2,7 @@
 
 A better REST console. [See it in action][].
 
-[See it in action]: http://beaucollins.github.io/wpcom-console2
+[See it in action]: http://console.beaucollins.com/
 
 ## Development
 
