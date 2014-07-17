@@ -3,6 +3,8 @@ var gulp       = require('gulp'),
     sass       = require('gulp-sass'),
     concat     = require('gulp-concat'),
     rename     = require('gulp-rename'),
+    tar        = require('gulp-tar'),
+    gzip       = require('gulp-gzip'),
     browserify = require('browserify'),
     source     = require('vinyl-source-stream'),
     package    = require('./package.json'),
@@ -21,11 +23,14 @@ config.version = package.version;
 var public = 'build/wpcom-console/public';
 
 gulp.task("default", ["public", "html", "js", "css"], function() {
-
+  gulp.src(public + "/**")
+    .pipe(tar('wpcom-console.tar'))
+    .pipe(gzip())
+    .pipe(gulp.dest('build'));
 });
 
 gulp.task("public", function() {
-  gulp.src('./public/**')
+  return gulp.src('./public/**')
     .pipe(gulp.dest(public));
 });
 
@@ -37,7 +42,7 @@ gulp.task("config", function(cb) {
 });
 
 gulp.task("html", ["config"], function() {
-  gulp.src('./templates/views/app.jade')
+  return gulp.src('./templates/views/app.jade')
     .pipe(jade({locals:config}))
     .pipe(rename('index.html'))
     .pipe(gulp.dest(public));
@@ -52,7 +57,7 @@ gulp.task("js", function() {
 });
 
 gulp.task("css", function() {
-  gulp.src('templates/sass/*.scss')
+  return gulp.src('templates/sass/*.scss')
     .pipe(sass())
     .pipe(concat('style.css'))
     .pipe(gulp.dest(public));
