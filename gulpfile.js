@@ -20,11 +20,11 @@ try {
 
 config.version = package.version;
 
-var public = 'build/wpcom-console/public';
+var public = 'build/dist/wpcom-console/public';
 
-gulp.task("default", ["public", "html", "js", "css"], function() {
-  gulp.src(public + "/**")
-    .pipe(tar('wpcom-console.tar'))
+gulp.task("default", ["config", "public", "html", "js", "css"], function() {
+  gulp.src("build/dist/**")
+    .pipe(tar('wpcom-console-' + config.build + '.tar'))
     .pipe(gzip())
     .pipe(gulp.dest('build'));
 });

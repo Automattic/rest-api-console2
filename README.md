@@ -43,4 +43,4 @@ To create a static package you can use anywhere (e.g. Github pages):
 
     npm run build
 
-The static site is located in `build/wpcom-console/public` along with a tarball.
+The static site is located in `build/dist/wpcom-console/public` along with a tarball.
