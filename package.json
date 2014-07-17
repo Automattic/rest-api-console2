@@ -15,15 +15,13 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "mocha" : "*",
-    "express" : "*",
-    "browserify" : "*",
-    "browserify-middleware" : "*",
-    "jade" : "*",
-    "morgan" : "*",
-    "minifier" : "*",
-    "node-sass" : "*",
-    "json" : "*"
+    "browserify": "*",
+    "browserify-middleware": "*",
+    "express": "*",
+    "jade": "*",
+    "mocha": "*",
+    "node-sass": "*",
+    "zepto-browserify": "^1.1.3-0"
   },
   "dependencies": {
     "liquidmetal": "rmm5t/liquidmetal",
