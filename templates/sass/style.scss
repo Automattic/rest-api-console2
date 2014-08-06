@@ -789,6 +789,10 @@ div.compact {
 code {
 
   &.compact {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    white-space: nowrap;
     color: hsl(0,0%,50%);
   }
 
@@ -1019,6 +1023,16 @@ code {
     padding: 8px;
     @include flex(1,1);
   }
+
+  .viewer {
+    padding-top: 38px;
+
+    pre {
+      padding: 0;
+      margin: 0;
+    }
+
+  }
 }
 
 .overlay {
@@ -1124,6 +1138,45 @@ code {
   }
 
 }
+
+.view-segment {
+  margin: 0 auto;
+  list-style: none;
+  cursor: pointer;
+  @include flexbox(center, flex-start);
+  font-size: 12px;
+  height: 0;
+  position: relative;
+  top: 6px;
+  z-index: 5;
+
+  li {
+    background: hsl(202,68%,100%);
+    padding: 4px 8px;
+    margin: 0;
+    border: 1px solid hsl(202,68%,44%);
+    border-width: 1px 1px 1px 0;
+    color: hsl(202,68%,44%);
+
+    &:first-child {
+      border-radius: 1px 0 0 1px;
+      border-left-width: 1px;
+    }
+
+    &:last-child {
+      border-radius: 0 1px 1px 0;
+    }
+
+    &.selected {
+      background: hsl(202,68%,44%);
+      color: #FFF;
+    }
+
+  }
+
+}
+
+
 
 @-webkit-keyframes throbber {
   0%   { opacity: 0; -webkit-transform: scale(0,0); border-width: 7px; }
