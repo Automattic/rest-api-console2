@@ -773,7 +773,7 @@ code span.number {
     background: white;
     color: #2485bc; }
   .log a[download]::before {
-    content: "\2B07"; }
+    content: "\2B07\FE0E"; }
 
 #detail {
   display: flex;
