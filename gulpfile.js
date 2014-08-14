@@ -37,6 +37,7 @@ gulp.task("public", function() {
 gulp.task("config", function(cb) {
   exec('git describe --always --tag --long --dirty', function(err, stdout, stderr) {
     config.build = stdout.trim();
+    config.resource_version = config.build;
     cb(err);
   });
 });

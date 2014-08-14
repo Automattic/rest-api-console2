@@ -33,6 +33,7 @@ app.use(sass.middleware({
 // serve app html
 app.get('/', function(req, res) {
   config.build = 'dev';
+  config.resource_version = 'dev-' + (new Date()).getTime();
   config.version = package.version;
   res.render('app', config);
 });

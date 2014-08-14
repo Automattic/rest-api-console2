@@ -1,13 +1,9 @@
-mixin appscript(name)
-  - var src = name + "?" + (build == 'dev' ? (new Date).getTime() : build)
-    script(type="text/javascript", src=src)
-
 doctype html
 html(lang="en")
 
   head
 
-    link(rel="stylesheet", type="text/css", charset="utf-8" href="style.css")
+    link(rel="stylesheet", type="text/css", charset="utf-8" href="style.css?" + resource_version)
     link(rel="icon" href="favicon.ico", type="image/x-icon")
     link(rel="shortcut icon" href="favicon.ico", type="image/x-icon")
 
@@ -25,7 +21,7 @@ html(lang="en")
 
     meta(name="generated_at", content=(new Date).getTime())
 
-    +appscript('app.js')
+    script(type="text/javascript" src='app.js?' + resource_version)
 
   body
     section#reference
