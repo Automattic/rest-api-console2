@@ -59,7 +59,7 @@ gulp.task("js", function() {
 
 gulp.task("css", function() {
   return gulp.src('templates/sass/*.scss')
-    .pipe(sass())
+    .pipe(sass({outputStyle:'compressed'}))
     .pipe(concat('style.css'))
     .pipe(gulp.dest(public));
 });
