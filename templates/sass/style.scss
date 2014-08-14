@@ -19,11 +19,13 @@
 
 }
 
-@mixin flex($grow:0, $shrink:1) {
+@mixin flex($grow:0, $shrink:1, $align-self: auto) {
   flex-grow: $grow;
   -webkit-flex-grow: $grow;
   flex-shrink: $shrink;
   -webkit-flex-shrink: $shrink;
+  align-self: $align-self;
+  -webkit-align-self: $align-self;
 }
 
 %genericon {
@@ -59,15 +61,21 @@ div#path {
   top: 0;
   left: 0;
   right: 0;
-  height: 44px;
-  padding: 16px;
+  min-height: 44px;
   font-size: 18px;
   z-index: 2;
+  position: relative;
 
   @include flexbox(center, stretch);
 
   > div {
     padding: 8px;
+    background: hsl(202,68%,100%);
+
+    &.method {
+      @include flex(0,0);
+    }
+
   }
 
 }
@@ -77,52 +85,51 @@ div#parts {
   position: relative;
   overflow: visible;
   background: hsl(205,38%,100%);
+  padding: 0 8px;
 
-  @include flexbox(flex-start, center);
+  @include flexbox(flex-start, center, row, wrap);
 
   // As a flexbox child element expands to fill space
-  @include flex(1, 0);
-
-  .endpoint > & {
-    background: hsl(205,38%,94%);
-  }
+  @include flex(1, 1);
 
   > div {
     font-size: 14px;
     font-family: "bitstream_vera_sans_monoroman";
-    padding: 1px 1px 0 1px;
+    padding: 3px 1px 3px 1px;
     line-height: 16px;
     min-height: 16px;
-    color: hsl(202,20%,44%);
-    line-height: 24px;
+    color: hsl(202,20%,54%);
     overflow: hidden;
-    text-overflow: ellipsis ellipsis;
 
     // CSS3 Flexbox child properties
     @include flex(0, 0);
 
-    &:nth-last-child(3):nth-child(2) {
-      background: none;
-      border: none;
-
-      @include flex(1, 0);
-    }
-
-    &:nth-last-child(3):first-child:focus {
-      outline: none;
-      background: none;
-    }
-
     &.param {
+      background: hsl(205,38%,94%);
       color: hsl(202,68%,44%);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis "";
       position: relative;
-      background: hsl(205,38%,100%);
       padding-left: 6px;
       padding-right: 6px;
       border-radius: 2px;
+      margin: 3px 0;
+      max-width: 25%;
+      -moz-box-sizing: border-box;
+      box-sizing: border-box;
+      overflow: hidden;
+
+      &:only-child {
+        background: hsl(205,38%,100%);
+        padding: 0;
+        @include flex(1,0);
+        max-width: 100%;
+      }
+
+      &:last-child {
+        max-width: 100%;
+      }
 
       &:focus {
         outline: none;
@@ -131,27 +138,19 @@ div#parts {
     }
   }
 
-  > div#search {
-    text-align: right;
-    cursor: pointer;
-    background: none;
-
-    .endpoint & {
-      flex-grow: 1;
-      -webkit-flex-grow: 1;
-    }
-
-  }
-
   > div:first-child {
     margin-left: 0;
   }
 
 }
 
+#lookup-container {
+  position: relative;
+  @include flexbox(flex-start, center, row, nowrap);
+  @include flex(1,1);
+}
+
 #auth {
-  color: hsl(201,60%,100%);
-  background-color: hsl(201,60%,60%);
   font-size: 14px;
 
   cursor: pointer;
@@ -168,10 +167,17 @@ div#parts {
 
   div#path > & {
     padding: 0;
+    color: hsl(201,60%,100%);
+    background-color: hsl(201,60%,60%);
 
     &:active, &.active {
       color: hsl(201,60%,70%);
       background-color: hsl(201,60%,100%);
+    }
+
+    &:hover, &:focus {
+      outline: none;
+      background-color: hsl(201,60%,70%);
     }
 
   }
@@ -188,10 +194,6 @@ div#parts {
     width: 44px;
   }
 
-  &:hover, &:focus {
-    outline: none;
-    background-color: hsl(201,60%,70%);
-  }
 
   .throbber {
     display: none;
@@ -320,20 +322,23 @@ div#method {
   position: relative;
   cursor: default;
 
+  top: 1px;
+  font-size: 14px;
+  font-family: "bitstream_vera_sans_monoroman";
+
   border-radius: 1px;
 
-  div#parts > & {
-    overflow: visible;
-    color: hsl(201,60%,60%);
-    padding: 2px 4px 0;
-    line-height: 22px;
+  overflow: visible;
+  color: hsl(201,60%,60%);
+  padding: 2px 4px 0;
+  line-height: 22px;
 
-    align-self: center;
-    -webkit-align-self: center;
+  align-self: center;
+  -webkit-align-self: center;
 
-  }
+  @include flex(0,0);
 
-  div #parts > &.enabled {
+  &.enabled {
     background: hsl(205,38%,94%);
     cursor: pointer;
     padding-right: 20px;
@@ -389,25 +394,28 @@ div#methods {
 }
 
 div#submit {
-  background: url(res/return-@2x.png) no-repeat center center hsl(201,60%,60%);
-  background-size: 24px 24px;
-  color: hsl(201,60%,97%);
   cursor: pointer;
   min-width: 44px;
   text-align: center;
   box-sizing: border-box;
   -webkit-box-sizing: border-box;
 
+  div#path > & {
+    background: url(res/return-@2x.png) no-repeat center center hsl(201,60%,60%);
+    background-size: 24px 24px;
+    color: hsl(201,60%,97%);
 
-  &:hover, &:focus {
-    outline: none;
-    background-color: hsl(201,60%,70%);
-  }
+    &:hover, &:focus {
+      outline: none;
+      background-color: hsl(201,60%,70%);
+    }
 
-  div#path > &:active, div#path > &.active {
-    color: hsl(201,60%,70%);
-    background-color: hsl(201,60%,100%);
-    background-image: url(res/return-dark-@2x.png);
+    &:active, &.active {
+      color: hsl(201,60%,70%);
+      background-color: hsl(201,60%,100%);
+      background-image: url(res/return-dark-@2x.png);
+    }
+
   }
 
 }
@@ -416,9 +424,21 @@ div#submit {
 #search {
   padding: 0;
   width: 24px;
-  height: 24px;
+  text-align: right;
+  cursor: pointer;
+  background: none;
+  position: relative;
+
+  @include flex(0,0);
+  
 
   a {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -moz-transform: translate(-50%,-50%);
+    -webkit-transform: translate(-50%,-50%);
+    transform: translate(-50%,-50%);
     display: inline-block;
     vertical-align: -2px;
     content: '';
@@ -461,13 +481,13 @@ div#submit {
 
 div#lookup {
 
-  div#parts > & {
+  div#lookup-container > & {
     font-family: open_sans;
     font-size: 14px;
     position: absolute;
     padding: 0;
-    left: 0;
-    right: 0;
+    left: 0px;
+    right: 0px;
     top: 100%;
     z-index: 3;
     background: none;
