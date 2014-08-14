@@ -775,12 +775,9 @@ div.container {
 } // #requests
 
 
-div.compact {
+.body {
   font-size: 12px;
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
   white-space: nowrap;
@@ -813,7 +810,7 @@ code {
 .log {
 
   #requests & {
-    @include flexbox('flex-start');
+    @include flexbox('flex-start', 'flex-start');
 
     cursor: pointer;
     border-bottom: 1px solid hsl(205,38%,88%);
@@ -834,42 +831,17 @@ code {
       }
       &:last-child {
         @include flex(0,0);
-        min-width: 48px;
-        text-align: center;
-      }
-    }
-
-    &.complete {
-
-      > div:last-child::before {
-        display: inline-block;
-        content: '';
-        width: 24px;
-        height: 24px;
-        border-radius: 100%;
-        background: url(res/disclosure-dark-@2x.png) center center no-repeat;
-        background-size: 16px 16px;
-        opacity: 0.5;
-      }
-
-      &:focus {
-        > div:last-child::before {
-          opacity: 1;
-        }
-      }
-
-      &:hover {
-        > div:last-child::before {
-          background-image: url(res/disclosure-@2x.png);
-          background-color: hsl(201,60%,60%);
-        }
+        text-align: right;
+        min-width: 40px;
       }
     }
 
   }
 
-
   .throbber {
+    position: relative;
+    top: 4px;
+    left: -12px;
     padding: 0;
 
     div {
@@ -948,21 +920,32 @@ code {
   }
 
   a[download] {
+    padding: 3px;
+    font-size: 12px;
+    border-radius: 2px;
     text-decoration: none;
     display: inline-block;
-    vertical-align: -6px;
+    vertical-align: -2px;
     margin-right: 8px;
-    color: hsl(202,68%,68%);
+    border: 1px solid hsl(205,38%,70%);
+    color: hsl(205,38%,70%);
 
     &:hover {
+      padding: 4px;
+      border: none;
+      background: hsl(202,68%,44%);
+      color: hsl(202,68%,100%);
+    }
+
+    &:focus, &:active {
+      padding: 3px;
+      border: 1px solid hsl(202,68%,44%);
+      background: hsl(202,68%,100%);
       color: hsl(202,68%,44%);
     }
 
     &::before {
-      @extend %genericon;
-      content: '\f440';
-      font-size: 24px;
-      line-height: 24px;
+      content: "\2B07";
     }
   }
 
@@ -1189,7 +1172,7 @@ code {
     margin: 0;
 
     ol {
-      margin: 0 0 0 16px;;
+      margin: 0 0 0 8px;;
     }
 
   }
@@ -1197,12 +1180,14 @@ code {
   li {
 
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     margin: 0;
 
     > span::before {
       content: '';
-      margin-left: 2px;
-      width: 16px;
+      margin-left: 1px;
+      width: 12px;
       height: 16px;
       display: inline-block;
       position: relative;
@@ -1236,8 +1221,6 @@ code {
 
     &.closed {
       max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     > span {
