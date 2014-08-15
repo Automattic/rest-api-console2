@@ -494,22 +494,24 @@ div#lookup {
     z-index: 3;
     background: none;
     overflow: visible;
+    box-shadow: 0 2px 4px hsla(0,0%,0%,0.25);
+
   }
 
   > ol {
+    opacity: 0.96;
     list-style: none;
     padding: 0;
     margin: 0;
-    background: hsl(210,33%,99%);
+    background: hsl(210,33%,100%);
     position: relative;
     top: 1px;
   }
 
   li {
     margin: 0;
-    padding: 6px 8px;
+    padding: 8px;
     cursor: pointer;
-    border-bottom: 1px solid hsl(205,38%,94%);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
