@@ -558,20 +558,9 @@ div#lookup {
 }
 
 section#parameters {
-  font-size: 18px;
+  font-size: 16px;
 
-
-  // CSS3 Flexbox
-  display: flex;
-  display: -webkit-flex;
-  flex-direction: row;
-  -webkit-flex-direction: row;
-  flex-wrap: nowrap;
-  -webkit-flex-wrap: nowrap;
-  justify-content: center;
-  -webkit-justify-content: center;
-  align-items: middle;
-  -webkit-align-items: stretch;
+  @include flexbox(center, stretch);
   position:relative;
 
   > div {
@@ -584,10 +573,7 @@ section#parameters {
     position: relative;
 
     // CSS3 Flexbox
-    flex-grow: 1;
-    -webkit-flex-grow: 1;
-    flex-shrink: 0;
-    -webkit-flex-shrink: 0;
+    @include flex(1,0);
 
     &:first-child {
       padding-right: 8px;
