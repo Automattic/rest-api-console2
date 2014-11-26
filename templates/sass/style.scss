@@ -918,7 +918,7 @@ code {
   &.error header > span:last-child {
     color: hsl(0,100%,50%);
 
-    ::before {
+    &::before {
       content: '\f414';
       margin-right: 8px;
     }
