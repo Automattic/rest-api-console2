@@ -40,6 +40,16 @@ body {
   font-family: "open_sans";
   font-size: 14px;
   line-height: 1;
+  position: absolute;
+
+  overflow: visible;
+
+  background: hsl(202,68%,44%);
+
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
 
   @include flexbox(flex-start, stretch, column);
 
@@ -780,6 +790,9 @@ div.container {
 } // #tip
 
 #requests {
+
+  background: #FFF;
+  @include flex(1,1);
 
 } // #requests
 
