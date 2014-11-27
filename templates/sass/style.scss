@@ -40,18 +40,16 @@ body {
   font-family: "open_sans";
   font-size: 14px;
   line-height: 1;
-  position: absolute;
 
   overflow: visible;
 
-  background: hsl(202,68%,44%);
-
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-
   @include flexbox(flex-start, stretch, column);
+
+  background: left top fixed #fff no-repeat;
+  background-image: -webkit-linear-gradient(hsl(202,68%,44%) 64px, hsl(202,68%,100%) 65px);
+  background-image: -moz-linear-gradient(hsl(202,68%,44%) 64px, hsl(202,68%,100%) 65px);
+  background-image: -ms-linear-gradient(hsl(202,68%,44%) 64px, hsl(202,68%,100%) 65px);
+  background-image: -o-linear-gradient(hsl(202,68%,44%) 64px, hsl(202,68%,100%) 65px);
 
 }
 
