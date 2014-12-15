@@ -50,7 +50,7 @@ gulp
 
 .task("html", ["config"], function() {
   return gulp.src('./templates/views/app.jade')
-    .pipe(jade({locals:config}))
+    .pipe(jade({locals:config, pretty:"  "}))
     .pipe(rename('index.html'))
     .pipe(gulp.dest(public));
 })
