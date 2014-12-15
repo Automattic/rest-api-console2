@@ -17,9 +17,11 @@
   "devDependencies": {
     "browserify": "*",
     "browserify-middleware": "*",
+    "del": "^1.1.0",
     "express": "^3.*",
     "gulp": "^3.8.6",
     "gulp-concat": "^2.3.3",
+    "gulp-ejs": "^1.0.0",
     "gulp-gzip": "0.0.8",
     "gulp-jade": "^0.6.1",
     "gulp-rename": "^1.2.0",
@@ -30,8 +32,8 @@
     "node-sass": "^0.9",
     "uglifyify": "^2.5.0",
     "vinyl-source-stream": "^0.1.1",
-    "zepto-browserify": "^1.1.3-0",
-    "wpcom-proxy-request" : "*"
+    "wpcom-proxy-request": "*",
+    "zepto-browserify": "^1.1.3-0"
   },
   "dependencies": {
     "liquidmetal": "rmm5t/liquidmetal",
