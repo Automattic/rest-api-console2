@@ -1,5 +1,6 @@
 var gulp       = require('gulp'),
     jade       = require('gulp-jade'),
+    ejs        = require('gulp-ejs'),
     sass       = require('gulp-sass'),
     concat     = require('gulp-concat'),
     rename     = require('gulp-rename'),
@@ -9,57 +10,72 @@ var gulp       = require('gulp'),
     source     = require('vinyl-source-stream'),
     package    = require('./package.json'),
     exec       = require('child_process').exec,
+    del        = require('del'),
     build      = 'dev';
 
+var config = {};
 try {
-  var config = require('./config.json');
-} catch (variable) {
+  config = require('./config.json');
+} catch (err) {
   console.error("Missing config.json, read README.md for instructions.");
-  var config = {};
 }
 
 config.version = package.version;
 
 var public = 'build/dist/wpcom-console/public';
 
-gulp.task("default", ["config", "public", "html", "js", "css"], function() {
+gulp
+
+.task("default", ["package"])
+
+.task("package", ["config", "public", "html", "js", "css", "readme"], function() {
   gulp.src("build/dist/**")
     .pipe(tar('wpcom-console-' + config.build + '.tar'))
     .pipe(gzip())
     .pipe(gulp.dest('build'));
-});
+})
 
-gulp.task("public", function() {
+.task("public", function() {
   return gulp.src('./public/**')
     .pipe(gulp.dest(public));
-});
+})
 
-gulp.task("config", function(cb) {
+.task("config", function(cb) {
   exec('git describe --always --tag --long --dirty', function(err, stdout, stderr) {
     config.build = stdout.trim();
     config.resource_version = config.build;
     cb(err);
   });
-});
+})
 
-gulp.task("html", ["config"], function() {
+.task("html", ["config"], function() {
   return gulp.src('./templates/views/app.jade')
     .pipe(jade({locals:config}))
     .pipe(rename('index.html'))
     .pipe(gulp.dest(public));
-});
+})
 
-gulp.task("js", function() {
+.task("js", function() {
   return browserify('./lib/app.js')
     .transform({global:true}, "uglifyify")
     .bundle()
     .pipe(source('app.js'))
     .pipe(gulp.dest(public));
-});
+})
 
-gulp.task("css", function() {
+.task("css", function() {
   return gulp.src('templates/sass/*.scss')
     .pipe(sass({outputStyle:'compressed'}))
     .pipe(concat('style.css'))
     .pipe(gulp.dest(public));
+})
+
+.task("readme", ["config"], function() {
+  return gulp.src('templates/README.md.ejs')
+    .pipe(ejs({build:config}, {ext:''}))
+    .pipe(gulp.dest(public));
+})
+
+.task("clean", function(cb) {
+  return del("build", cb);
 });
