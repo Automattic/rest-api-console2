@@ -1030,7 +1030,7 @@ code {
 
   > div {
     overflow: auto;
-    padding: 8px;
+    padding: 8px 8px 6px;
     @include flex(1,1);
   }
 
