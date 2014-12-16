@@ -29,7 +29,7 @@
 }
 
 %genericon {
-  font-family: Genericons;
+  font-family: Genericons, Noticons;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   display: inline-block;
@@ -37,7 +37,7 @@
 
 body {
   margin:0;
-  font-family: "open_sans";
+  font-family: "Open Sans", sans-serif;
   font-size: 14px;
   line-height: 1;
 
@@ -54,7 +54,7 @@ body {
 }
 
 pre, code {
-  font-family: "bitstream_vera_sans_monoroman";
+  font-family: Inconsolata, monospace;
 }
 
 :focus {
@@ -104,7 +104,7 @@ div#parts {
 
   > div {
     font-size: 14px;
-    font-family: "bitstream_vera_sans_monoroman";
+    font-family: Inconsolata, monospace;
     padding: 3px 1px 3px 1px;
     line-height: 16px;
     min-height: 16px;
@@ -334,7 +334,7 @@ div#method {
 
   top: 1px;
   font-size: 14px;
-  font-family: "bitstream_vera_sans_monoroman";
+  font-family: Inconsolata, monospace;
 
   border-radius: 1px;
 
@@ -365,7 +365,7 @@ div#method {
 
   &::after {
     content: '\25BE';
-    font-family: open_sans;
+    font-family: "Open Sans", sans-serif;
     display: inline-block;
     position: absolute;
     right: 6px;
@@ -492,7 +492,7 @@ div#submit {
 div#lookup {
 
   div#lookup-container > & {
-    font-family: open_sans;
+    font-family: "Open Sans", sans-serif;
     font-size: 14px;
     position: absolute;
     padding: 0;
@@ -541,7 +541,7 @@ div#lookup {
     }
 
     > span {
-      font-family: "bitstream_vera_sans_monoroman";
+      font-family: Inconsolata, monospace;
       color: hsl(202,68%,80%);
       width: 45px;
     }
@@ -597,7 +597,7 @@ section#parameters {
   }
 
   div.raw {
-    font-family: "bitstream_vera_sans_monoroman";
+    font-family: Inconsolata, monospace;
     background: hsl(240,100%,100%);
     color: hsl(202,68%,44%);
     min-height: 50px;
@@ -662,7 +662,7 @@ section#parameters {
    word-break: break-all;
    word-break: break-word;
    background: hsl(240,100%,100%);
-   font-family: "bitstream_vera_sans_monoroman";
+   font-family: Inconsolata, monospace;
    color: hsl(202,68%,44%);
    box-sizing: border-box;
    -webkit-box-sizing: border-box;

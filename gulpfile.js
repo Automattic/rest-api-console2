@@ -64,8 +64,8 @@ gulp
 })
 
 .task("css", function() {
-  return gulp.src('templates/sass/*.scss')
-    .pipe(sass({outputStyle:'compressed'}))
+  return gulp.src('templates/sass/style.scss')
+    .pipe(sass())
     .pipe(concat('style.css'))
     .pipe(gulp.dest(public));
 })
