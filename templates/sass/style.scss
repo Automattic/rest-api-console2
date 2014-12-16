@@ -38,7 +38,7 @@
 body {
   margin:0;
   font-family: "Open Sans", sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1;
 
   overflow: visible;
@@ -96,14 +96,14 @@ div#parts {
   overflow: visible;
   background: hsl(205,38%,100%);
   padding: 0 8px;
-
+  line-height: 22px;
   @include flexbox(flex-start, center, row, wrap);
 
   // As a flexbox child element expands to fill space
   @include flex(1, 1);
 
   > div {
-    font-size: 14px;
+    font-size: 16px;
     font-family: Inconsolata, monospace;
     padding: 3px 1px 3px 1px;
     line-height: 16px;
@@ -124,7 +124,7 @@ div#parts {
       padding-left: 6px;
       padding-right: 6px;
       border-radius: 2px;
-      margin: 3px 0;
+      margin: 1px 0;
       max-width: 25%;
       -moz-box-sizing: border-box;
       box-sizing: border-box;
@@ -161,7 +161,7 @@ div#parts {
 }
 
 #auth {
-  font-size: 14px;
+  font-size: 16px;
 
   cursor: pointer;
 
@@ -197,7 +197,7 @@ div#parts {
     @extend %genericon;
     position: relative;
     content: '\f427';
-    font-size: 22px;
+    font-size: 24px;
     vertical-align: -6px;
     text-align: center;
     left: 0px;
@@ -333,21 +333,25 @@ div#method {
   position: relative;
   cursor: default;
 
-  top: 1px;
-  font-size: 14px;
+  font-size: 16px;
   font-family: Inconsolata, monospace;
 
   border-radius: 1px;
 
+  top: -1px;
   overflow: visible;
   color: hsl(201,60%,60%);
   padding: 2px 4px 0;
-  line-height: 22px;
+  line-height: 24px;
 
   align-self: center;
   -webkit-align-self: center;
 
   @include flex(0,0);
+
+  > span {
+    display: inline-block;
+  }
 
   &.enabled {
     background: hsl(205,38%,94%);
@@ -494,7 +498,7 @@ div#lookup {
 
   div#lookup-container > & {
     font-family: "Open Sans", sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     position: absolute;
     padding: 0;
     left: 0px;
@@ -567,7 +571,7 @@ div#lookup {
 }
 
 section#parameters {
-  font-size: 16px;
+  font-size: 14px;
 
   @include flexbox(center, stretch);
   position:relative;
@@ -797,7 +801,7 @@ div.container {
 
 
 .body {
-  font-size: 12px;
+  font-size: 16px;
   margin: 0;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
