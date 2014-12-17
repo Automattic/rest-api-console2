@@ -1,5 +1,10 @@
 @import "type";
 
+$medium: hsl(202,60%,60%);
+$dark: hsl(202,68%,44%);
+$light: hsl(202,60%,100%);
+$highlight: hsl(205,38%,88%);
+
 @mixin flexbox($justify: center, $align: center, $direction: row, $wrap: nowrap) {
   // CSS Flexbox container properties
   display: flex;
@@ -40,16 +45,10 @@ body {
   font-family: "Open Sans", sans-serif;
   font-size: 16px;
   line-height: 1;
-
+  background: white;
   overflow: visible;
 
   @include flexbox(flex-start, stretch, column);
-
-  background: left top fixed #fff no-repeat;
-  background-image: -webkit-linear-gradient(hsl(202,68%,44%) 64px, hsl(202,68%,100%) 65px);
-  background-image: -moz-linear-gradient(hsl(202,68%,44%) 64px, hsl(202,68%,100%) 65px);
-  background-image: -ms-linear-gradient(hsl(202,68%,44%) 64px, hsl(202,68%,100%) 65px);
-  background-image: -o-linear-gradient(hsl(202,68%,44%) 64px, hsl(202,68%,100%) 65px);
 
 }
 
@@ -62,7 +61,8 @@ pre, code {
 }
 
 section#builder {
-  background: hsl(202,60%,60%);
+  padding-top: 44px;
+  background: $medium;
 }
 
 /* +Main Toolbar */
@@ -74,12 +74,12 @@ div#path {
   min-height: 44px;
   font-size: 18px;
   z-index: 2;
-  position: relative;
+  position: fixed;
 
   @include flexbox(center, stretch);
 
   > div {
-    padding: 8px;
+    padding: 8px 8px 6px;
     background: hsl(202,68%,100%);
 
     &.method {
@@ -123,7 +123,7 @@ div#parts {
       position: relative;
       padding-left: 6px;
       padding-right: 6px;
-      border-radius: 2px;
+      border-radius: 1px;
       margin: 1px 0;
       max-width: 25%;
       -moz-box-sizing: border-box;
@@ -575,6 +575,9 @@ section#parameters {
 
   @include flexbox(center, stretch);
   position:relative;
+  border-top: 1px solid hsl(205,38%,94%);
+  border-bottom: 1px solid hsl(205,38%,94%);
+  background: white;
 
   > div {
     min-height: 20px;
@@ -582,22 +585,24 @@ section#parameters {
     max-width: 50%;
     box-sizing: border-box;
     -moz-box-sizing: border-box;
-    padding: 16px;
+    padding: 0;
     position: relative;
+    margin: 0;
+    border-right: 1px solid hsl(205,38%,94%);
 
     // CSS3 Flexbox
     @include flex(1,0);
 
     &:first-child {
-      padding-right: 8px;
     }
 
     &:last-child {
-      padding-left: 8px;
+      margin-right: 0;
+      border-right: none;
     }
 
     &.disabled {
-      opacity: 0.5;
+      opacity: 0.25;
     }
   }
 
@@ -645,6 +650,12 @@ section#parameters {
    border-bottom: 1px solid hsl(205,38%,94%);
    padding: 0;
  }
+ 
+ tr:last-child {
+   th, td {
+     border-bottom: none;
+   }
+ }
 
  th {
    width: 30%;
@@ -687,7 +698,7 @@ div.container {
     bottom: 0;
     right: 0;
     left: 0;
-    height: 4px;
+    height: 6px;
     z-index: 1;
     position: absolute;
     background: linear-gradient(hsla(0,0%,0%,0.0), hsla(0,0%,0%,0.2));
@@ -700,7 +711,7 @@ div.container {
     top: 0;
     right: 0;
     left: 0;
-    height: 4px;
+    height: 6px;
     z-index: 1;
     position: absolute;
     background: linear-gradient(hsla(0,0%,0%,0.2), hsla(0,0%,0%,0.0));
@@ -840,10 +851,6 @@ code {
     cursor: pointer;
     border-bottom: 1px solid hsl(205,38%,88%);
     padding: 8px 0 8px 16px;
-
-    &:first-child {
-        border-top: 1px solid hsl(205,38%,88%);
-    }
 
     &:focus {
       outline: none;
@@ -1075,7 +1082,6 @@ code {
 
   @include flexbox('flex-start', 'stretch');
 
-  background: hsl(202,68%,44%);
   height: 0;
   -webkit-order: -1;
   overflow: hidden;
@@ -1083,26 +1089,17 @@ code {
   -moz-transition: height 200ms;
   -webkit-transition: height 200ms;
   position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    left: 0;
-    bottom: 0;
-    height: 5px;
-    background: -webkit-linear-gradient(hsla(0,0%,0%,0), hsla(0,0%,0%,0.5));
-  }
+  box-sizing: border-box;
+  background: $medium;
 
   > div {
     @include flex(1,1);
-    background: #FFF;
-    margin: 0;
-    border: 1px solid hsl(202,10%,90%);
-    border-width: 0 1px;
+    background: white;
     overflow: auto;
     min-width: 20%;
     max-width: 200px;
+    box-sizing: border-box;
+    margin: 8px 1px 8px 0px;
 
     &:focus {
       outline: none;
@@ -1110,9 +1107,11 @@ code {
 
     &:first-child {
       border: none;
+      margin-left: 8px;
     }
 
     &:last-child {
+      margin-right: 8px;
       max-width: none;
       border: none;
     }

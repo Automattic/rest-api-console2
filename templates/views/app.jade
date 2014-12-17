@@ -22,19 +22,19 @@ html(lang="en")
     script(type="text/javascript" src='app.js?' + resource_version)
 
   body
-    section#reference
+    #path
+      #auth(tabindex="1")
+      #lookup-container
+        #method.enabled(tabindex="1")
+          span
+          #methods
+        #parts
+        #search
+          a
+        #lookup
+      #submit(tabindex="1")
     section#builder
-      #path
-        #auth(tabindex="1")
-        #lookup-container
-          #method.enabled(tabindex="1")
-            span
-            #methods
-          #parts
-          #search
-            a
-          #lookup
-        #submit(tabindex="1")
+      section#reference
       section#parameters
         #query
         #body.disabled
