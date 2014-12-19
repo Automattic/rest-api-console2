@@ -79,15 +79,31 @@ div#path {
   font-size: 18px;
   z-index: 4;
   position: fixed;
+  box-shadow: 0 0 8px hsla(0,0%,0%,0.35);
 
   @include flexbox(center, stretch);
 
   > div {
     padding: 8px 8px 6px;
     background: hsl(202,68%,100%);
+  }
 
-    &.method {
-      @include flex(0,0);
+  #versions {
+    top: 0;
+    background: $dark;
+    color: white;
+    padding-right: 24px;
+
+    > span {
+      display: inline-block;
+      vertical-align: -2px;
+    }
+
+    &::after {
+      font-style: Inconsolata, monospace;
+      font-size: 16px;
+      right: 8px;
+      top: 8px;
     }
 
   }
@@ -318,6 +334,14 @@ div#parts {
     -webkit-animation: throbber ease-out 0.7s infinite;
     -moz-animation: throbber ease-out 0.7s infinite;
     animation: throbber ease-out 0.7s infinite;
+
+  }
+
+  #version_loader & {
+    padding-left: 8px;
+    div {
+      border-color: $dark;
+    }
   }
 
 }
@@ -335,15 +359,7 @@ div.param {
 
 }
 
-div#method {
-  font-family: Inconsolata, monospace;
-  font-size: 16px;
-  top: -1px;
-  align-self: center;
-  -webkit-align-self: center;
-}
-
-div#method, .option_selector {
+.option_selector {
   font-weight: 100;
   font-size: 14px;
   position: relative;
@@ -357,10 +373,15 @@ div#method, .option_selector {
   line-height: 24px;
   @include flex(0,0);
   
+  #path & {
+    font-family: Inconsolata, monospace;
+    font-size: 16px;
+    top: -1px;
+  }
 
   > span {
     display: inline-block;
-    border-radius: 2px;
+    border-radius: 4px;
   }
 
 
@@ -419,8 +440,17 @@ div#method, .option_selector {
   }
 
   li {
-    padding: 3px 4px 1px;
+    padding: 3px 18px 1px 8px;
     white-space: nowrap;
+    position: relative;
+    &.selected {
+      &::after {
+        font-size: 12px;
+        content: " \2713";
+        position: absolute;
+        right: 4px;
+      }
+    }
 
     &:hover {
       background: $highlight;
