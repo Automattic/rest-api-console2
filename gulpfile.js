@@ -55,13 +55,23 @@ gulp
     .pipe(gulp.dest(public));
 })
 
-.task("js", function() {
+.task("app", function() {
   return browserify('./lib/app.js')
     .transform({global:true}, "uglifyify")
     .bundle()
     .pipe(source('app.js'))
     .pipe(gulp.dest(public));
 })
+
+.task("search", function() {
+  return browserify('./lib/search.js')
+    .transform({global:true}, "uglifyify")
+    .bundle()
+    .pipe(source('search.js'))
+    .pipe(gulp.dest(public));
+})
+
+.task("js", ["app", "search"])
 
 .task("css", function() {
   return gulp.src('templates/sass/style.scss')
