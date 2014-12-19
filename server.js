@@ -22,6 +22,7 @@ app.set('views', process.cwd() + '/templates/views');
 
 // build app.js using browserify
 app.get('/app.js', browserify('./lib/app.js'));
+app.get('/search.js', browserify('./lib/search.js'));
 
 // compile sass files
 app.use(sass.middleware({
