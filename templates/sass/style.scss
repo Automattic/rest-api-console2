@@ -584,6 +584,10 @@ div#submit {
     color: hsl(202,10%,40%);
     font-weight: 100;
 
+    &.unselectable {
+      cursor: default;
+    }
+
     &.group {
       font-size: 12px;
       font-weight: bold;
@@ -605,6 +609,10 @@ div#submit {
 
     &.highlight {
       background-color: hsl(205,38%,94%);
+
+      &.unselectable {
+        background-color: transparent;
+      }
     }
 
     &:last-child {
