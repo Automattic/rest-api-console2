@@ -2,7 +2,7 @@
 
 A better REST console. [See it in action][].
 
-[See it in action]: http://automattic.github.io/rest-api-console2/
+[See it in action]: http://developer.wordpress.com/api/console/
 
 ## Development
 
