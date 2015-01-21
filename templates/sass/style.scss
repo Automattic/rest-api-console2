@@ -725,8 +725,47 @@ section#parameters {
     padding: 8px;
     font-weight: normal;
     font-size: 14px;
-    text-transform: uppercase;
     border-bottom: 1px solid hsl(205,38%,94%);
+
+    @include flexbox(justify, center);
+
+    span {
+      @include flex(1);
+      text-transform: uppercase;
+    }
+
+    ul {
+      @include flexbox(justify, stretch);
+      padding: 0;
+      margin: 0;
+      list-style-type: none;
+      cursor: default;
+      font-size: 12px;
+      margin: -2px 0;
+
+      li {
+        padding: 2px 6px;
+        border: 1px solid hsl(203,53%,71%);
+        border-right-width: 0;
+
+        &.selected {
+          background: hsl(203,53%,71%);
+          color: #FFF;
+        }
+
+        &:first-child {
+         border-radius: 2px 0 0 2px; 
+        }
+
+        &:last-child {
+          border-right-width: 1px;
+          border-radius: 0 2px 2px 0;
+        }
+
+      }
+
+    }
+
   }
 
 
