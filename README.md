@@ -48,4 +48,14 @@ The static site is located in `build/dist/wpcom-console/public` along with a tar
 
 ## License
 
-All source code licensed under the [MIT](./LICENSE) open source license.
+The REST API console is licensed under the
+[GPL version 2 or later](http://www.gnu.org/licenses/gpl-2.0.html).
+
+This project uses code from the following projects:
+
+* [REST API Console2][console2] by Automattic: Licensed under the MIT open
+  source license.
+
+(Full license information available in the [LICENSE](./LICENSE) file.)
+
+[console2]: https://github.com/Automattic/rest-api-console2
