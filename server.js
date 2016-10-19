@@ -1,6 +1,6 @@
 var express = require('express'),
     browserify = require('browserify-middleware'),
-    sass = require('node-sass'),
+    sassMiddleware = require('node-sass-middleware'),
     app = express(),
     port = process.env.PORT || 4000,
     package = require('./package.json'),
@@ -25,7 +25,7 @@ app.get('/app.js', browserify('./lib/app.js'));
 app.get('/search.js', browserify('./lib/search.js'));
 
 // compile sass files
-app.use(sass.middleware({
+app.use(sassMiddleware({
   src:process.cwd() + '/templates/sass',
   debug:true,
   response:true
