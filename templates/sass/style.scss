@@ -88,7 +88,7 @@ div#path {
     background: hsl(202,68%,100%);
   }
 
-  #versions {
+  #versions, #api-selector {
     top: 0;
     background: $dark;
     color: white;
@@ -105,9 +105,7 @@ div#path {
       right: 8px;
       top: 8px;
     }
-
   }
-
 }
 
 div#parts {
@@ -372,7 +370,7 @@ div.param {
   padding: 2px 20px 0 4px;
   line-height: 24px;
   @include flex(0,0);
-  
+
   #path & {
     font-family: Inconsolata, monospace;
     font-size: 16px;
@@ -406,7 +404,7 @@ div.param {
     background: transparent;
 
     &::after {
-      visibility: hidden; 
+      visibility: hidden;
     }
 
     &:hover, &:active, &:focus {
@@ -502,7 +500,7 @@ div#submit {
   position: relative;
 
   @include flex(0,0);
-  
+
 
   a {
     position: absolute;
@@ -747,7 +745,7 @@ section#parameters {
    border-bottom: 1px solid hsl(205,38%,94%);
    padding: 0;
  }
- 
+
  tr:last-child {
    th, td {
      border-bottom: none;
@@ -1191,7 +1189,7 @@ code {
 
   header {
     @include flex(0,0);
-    
+
     h2 {
       font-size: 14px;
       font-weight: normal;
@@ -1266,7 +1264,7 @@ code {
         display: block;
         color: $dark;
       }
-      
+
       .description {
         display: block;
         font-size: 14px;
