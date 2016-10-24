@@ -2,7 +2,7 @@
   "name": "console2",
   "version": "1.0.3",
   "description": "A better REST console for WordPress.com.",
-  "homepage": "https://github.com/Automattic/rest-api-console2",
+  "homepage": "https://developer.wordpress.com/docs/api/console/",
   "main": "lib/index.js",
   "scripts": {
     "start": "node server.js",
