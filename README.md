@@ -11,7 +11,7 @@ Hacking requires node.js, install node.js for your system. (e.g. `brew install n
 To get up and running:
 
 1. Clone the repository
-    `git clone https://github.com/beaucollins/wpcom-console2.git`
+    `git clone https://github.com/Automattic/rest-api-console2.git`
 
 2. Install dependencies
     `npm install`
@@ -25,7 +25,7 @@ Visit [http://localhost:4000](http://localhost:4000) in your browser.
 
     sudo PORT=80 npm start
 
-WordPress.com's App settings do not allow CORS URI's with ports in them.
+WordPress.com's app settings do not allow CORS URI's with ports in them.
 
 ## Configure
 
@@ -35,7 +35,7 @@ Copy `config.sample.json` to `config.json` and use your WordPress.com App ID and
 
 You will also need to add your host to the CORS whitelist in the Application's settings.
 
-[wpcomdev]: https://developer.wordpress.com/
+[wpcomdev]: https://developer.wordpress.com/apps/
 
 ## Building
 
