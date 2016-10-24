@@ -639,10 +639,6 @@ div#submit {
     strong {
       font-weight: normal;
       text-transform: capitalize;
-
-      &::after {
-        content: ':';
-      }
     }
 
     &.loading {
