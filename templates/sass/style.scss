@@ -639,10 +639,6 @@ div#submit {
     strong {
       font-weight: normal;
       text-transform: capitalize;
-
-      &::after {
-        content: ':';
-      }
     }
 
     &.loading {
@@ -988,21 +984,19 @@ code {
 
     > code {
       display: block;
+      margin-right: 8px;
+      color: hsl(202,9%,44%);
     }
 
-    > code:first-of-type {
+    > code:nth-of-type(2) {
       color: hsl(202,68%,80%);
       text-transform: uppercase;
-      margin-right: 8px;
       flex-shrink: 0;
       -webkit-flex-shrink: 0;
     }
 
-    > code:nth-of-type(2) {
+    > code:nth-of-type(3) {
       color: hsl(202,68%,44%);
-    }
-
-    > code:nth-last-of-type(1) {
       flex-grow: 1;
       -webkit-flex-grow: 1;
       overflow: hidden;
