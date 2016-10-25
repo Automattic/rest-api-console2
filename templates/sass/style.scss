@@ -1031,12 +1031,16 @@ code {
   } // #requests header
 
   &.error header > span:last-child {
-    color: hsl(0,100%,50%);
+    color: #c00;
 
     &::before {
       content: '\f414';
       margin-right: 8px;
     }
+  }
+
+  &.error {
+   background: #ffe4e4;
   }
 
   .compact {
