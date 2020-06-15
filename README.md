@@ -1,8 +1,8 @@
 # Console2
 
-A better REST console. [See it in action][].
+A better REST console. 
 
-[See it in action]: http://developer.wordpress.com/api/console/
+This project has been superceded by https://github.com/Automattic/wp-api-console, which now powers the API console at developer.wordpress.com.
 
 ## Development
 
